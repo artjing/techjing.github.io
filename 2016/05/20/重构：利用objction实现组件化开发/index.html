@@ -1,0 +1,802 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="重构：利用objction实现组件化开发先从为什么要使用组件化开发说起下面是一个很常规的需求，我们要在首页添加一个Tabbar控制器，里面有几个模块可以来回切换。为了实现这个功能，我们必须在delegate中导入所有需要的Controller的头文件（假如还有第3、4、5个控制器，都要加进来）。先看下面的实现代码：   #import &amp;quot;AppDelegate.h&amp;quot; #impo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重构：利用objction实现组件化开发">
+<meta property="og:url" content="http://yoursite.com/2016/05/20/重构：利用objction实现组件化开发/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="重构：利用objction实现组件化开发先从为什么要使用组件化开发说起下面是一个很常规的需求，我们要在首页添加一个Tabbar控制器，里面有几个模块可以来回切换。为了实现这个功能，我们必须在delegate中导入所有需要的Controller的头文件（假如还有第3、4、5个控制器，都要加进来）。先看下面的实现代码：   #import &amp;quot;AppDelegate.h&amp;quot; #impo">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/%E7%BB%84%E4%BB%B6%E5%8C%96222.jpg?raw=true">
+<meta property="og:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202016-05-23%20%E4%B8%8B%E5%8D%885.36.55.png?raw=true">
+<meta property="og:updated_time" content="2016-10-30T13:09:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="重构：利用objction实现组件化开发">
+<meta name="twitter:description" content="重构：利用objction实现组件化开发先从为什么要使用组件化开发说起下面是一个很常规的需求，我们要在首页添加一个Tabbar控制器，里面有几个模块可以来回切换。为了实现这个功能，我们必须在delegate中导入所有需要的Controller的头文件（假如还有第3、4、5个控制器，都要加进来）。先看下面的实现代码：   #import &amp;quot;AppDelegate.h&amp;quot; #impo">
+<meta name="twitter:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/%E7%BB%84%E4%BB%B6%E5%8C%96222.jpg?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 重构：利用objction实现组件化开发 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                重构：利用objction实现组件化开发
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-05-20T23:30:00+08:00" content="2016-05-20">
+              2016-05-20
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="重构：利用objction实现组件化开发"><a href="#重构：利用objction实现组件化开发" class="headerlink" title="重构：利用objction实现组件化开发"></a>重构：利用objction实现组件化开发</h2><h4 id="先从为什么要使用组件化开发说起"><a href="#先从为什么要使用组件化开发说起" class="headerlink" title="先从为什么要使用组件化开发说起"></a>先从为什么要使用组件化开发说起</h4><p>下面是一个很常规的需求，我们要在首页添加一个Tabbar控制器，里面有几个模块可以来回切换。为了实现这个功能，我们必须在delegate中导入所有需要的Controller的头文件（假如还有第3、4、5个控制器，都要加进来）。先看下面的实现代码：  </p>
+<pre><code>#import &quot;AppDelegate.h&quot;
+#import &quot;FirstViewController.h&quot;
+#import &quot;SecondViewController.h&quot;
+
+@interface AppDelegate ()
+@end
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+
+self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+self.window.backgroundColor = [UIColor whiteColor];
+[self.window makeKeyAndVisible];
+
+// 创建tabbar控制器
+UITabBarController * tabbarVC = [[UITabBarController alloc] init];
+self.window.rootViewController = tabbarVC;
+
+// 创建第一个控制器
+FirstViewController * firstViewController = [[FirstViewController alloc] init];
+UINavigationController * firstNav = [[UINavigationController alloc] initWithRootViewController:firstViewController];
+firstViewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@&quot;button1&quot; image:[UIImage imageNamed:@&quot;&quot;] tag:1001];
+firstViewController.view.backgroundColor = [UIColor grayColor];
+firstViewController.title = @&quot;第一个控制器&quot;;
+
+// 创建第二个控制器
+SecondViewController * secondViewController = [[SecondViewController alloc] init];
+UINavigationController * secondNav = [[UINavigationController alloc] initWithRootViewController:secondViewController];
+secondViewController.tabBarItem = [[UITabBarItem alloc] initWithTitle:@&quot;button2&quot; image:[UIImage imageNamed:@&quot;&quot;] tag:1002];
+secondViewController.view.backgroundColor = [UIColor greenColor];
+secondViewController.title = @&quot;第二个控制器&quot;;
+
+tabbarVC.viewControllers = @[firstNav,secondNav];
+[self.window makeKeyAndVisible];
+
+return YES;
+}
+</code></pre><p>这段代码是我们常规开发的做法，简单明了，在需要的地方创建和调用我们需要的对象，对于复杂度不高的项目，这样做很好，既有较高的可读性，维护成本也低。但对于大的项目来说，APP中都有很多个功能模块，模块之间可以相互调用和通信，当我们的项目复杂度越来越高，模块之间的依赖也越强，很难分割。为了解决这个问题，很多人开始将项目重构，做组件化的开发，模块与模块之间解耦，从面向对象到面向接口的编程。这样4A模块可以交给A组去做，B模块交给B组去做，其它的模块也可以进行任务划分。<br> <img src="https://github.com/artjing/BLOGIMAGE/blob/master/%E7%BB%84%E4%BB%B6%E5%8C%96222.jpg?raw=true" alt="image"></p>
+<p>想要实现这样的目的，我们要如何才能做到解除各组件的依赖，又能调用到组件暴露出来的接口方法呢？我们需要一个中间层，负责转发信息，可以叫它Mediator、Manager或者Router都可以。下面我们将使用objection库对我们刚才的代码进行重构。 </p>
+<h4 id="使用objection库对项目进行重构"><a href="#使用objection库对项目进行重构" class="headerlink" title="使用objection库对项目进行重构"></a>使用objection库对项目进行重构</h4><h5 id="1，定义我们需要的协议类"><a href="#1，定义我们需要的协议类" class="headerlink" title="1，定义我们需要的协议类"></a>1，定义我们需要的协议类</h5><p>将我们用到的所有protocal及接口都放到protocals.h中。<br>项目的目录如下：  </p>
+<p><img src="https://github.com/artjing/BLOGIMAGE/blob/master/%E5%B1%8F%E5%B9%95%E5%BF%AB%E7%85%A7%202016-05-23%20%E4%B8%8B%E5%8D%885.36.55.png?raw=true" alt="image"></p>
+<p>AppDelegate中，只依赖协议文件protocals.h和Objection.h，后面我们将利用protocal获得我们需要的对象，以及调用对象的接口。对象的接口也定义在protocals.h文件中。</p>
+<pre><code>#import &lt;Foundation/Foundation.h&gt;
+@protocol protocals &lt;NSObject&gt;
+@end
+
+// FirstViewController的protocal
+@protocol firstViewControllerProtocals &lt;NSObject&gt;
+-(void)configWithTag;
+@end
+
+// SecondViewController的protocal
+@protocol secondViewControllerProtocals &lt;NSObject&gt;
+-(void)configWithTag;
+
+@end
+</code></pre><h5 id="2，定义module"><a href="#2，定义module" class="headerlink" title="2，定义module"></a>2，定义module</h5><p>定义module，继承自JSObjectionModule，在里面实现两个方法+(void)load和-(void)configure。</p>
+<pre><code>#import &quot;firstModule.h&quot;
+#import &quot;FirstViewController.h&quot;
+#import &quot;JSObjection.h&quot;
+
+@implementation firstModule
+
++(void)load
+{
+JSObjectionInjector * injector = [JSObjection defaultInjector];
+injector = injector?:[JSObjection createInjector];
+injector = [injector withModule:[[self alloc] init]];
+[JSObjection setDefaultInjector:injector];
+}
+
+-(void)configure
+{
+[self bindClass:[FirstViewController class] toProtocol:@protocol(firstViewControllerProtocals)];
+}
+</code></pre><h5 id="3，调用接口"><a href="#3，调用接口" class="headerlink" title="3，调用接口"></a>3，调用接口</h5><p>接下来就是对文章最开始那段代码的重构，通过objection，我们可以用prorocal直接获得对象，而不需要再创建。</p>
+<pre><code>#import &quot;AppDelegate.h&quot;
+#import &quot;protocals.h&quot;
+#import &quot;Objection.h&quot;
+
+@interface AppDelegate ()
+
+@end
+
+@implementation AppDelegate
+
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+
+self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+self.window.backgroundColor = [UIColor whiteColor];
+[self.window makeKeyAndVisible];
+[self setupTab];
+return YES;
+
+}
+
+-(void)setupTab
+{
+
+// 创建tabbar控制器
+UITabBarController * tabbarVC = [[UITabBarController alloc] init];
+self.window.rootViewController = tabbarVC;
+
+// 创建第一个控制器
+UIViewController&lt;firstViewControllerProtocals&gt; * firstViewController = [[JSObjection defaultInjector] getObject:@protocol(firstViewControllerProtocals)];
+// 调用接口，可以将上面初始化的方法写在里面。
+[firstViewController configWithTag];
+UINavigationController * firstNav = [[UINavigationController alloc] initWithRootViewController:firstViewController];
+
+// 创建第二个控制器
+UIViewController&lt;secondViewControllerProtocals&gt; * secondViewController = [[JSObjection defaultInjector] getObject:@protocol(secondViewControllerProtocals)];
+// 调用接口
+[firstViewController configWithTag];
+UINavigationController * secondNav = [[UINavigationController alloc] initWithRootViewController:secondViewController];
+
+tabbarVC.viewControllers = @[firstNav,secondNav];
+[self.window makeKeyAndVisible];
+}
+</code></pre>
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/20/https/" rel="next" title="HTTPS及RSA加密">
+                <i class="fa fa-chevron-left"></i> HTTPS及RSA加密
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/09/16/一行一行解读SDWebImage实现原理/" rel="prev" title="一行一行解读SDWebImage实现原理">
+                一行一行解读SDWebImage实现原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#重构：利用objction实现组件化开发"><span class="nav-number">1.</span> <span class="nav-text">重构：利用objction实现组件化开发</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#先从为什么要使用组件化开发说起"><span class="nav-number">1.0.1.</span> <span class="nav-text">先从为什么要使用组件化开发说起</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用objection库对项目进行重构"><span class="nav-number">1.0.2.</span> <span class="nav-text">使用objection库对项目进行重构</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1，定义我们需要的协议类"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">1，定义我们需要的协议类</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2，定义module"><span class="nav-number">1.0.2.2.</span> <span class="nav-text">2，定义module</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3，调用接口"><span class="nav-number">1.0.2.3.</span> <span class="nav-text">3，调用接口</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,718 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="最近在苏宁的项目中，有一个需要在客户端加签的需求，后台只提供了我一串公钥的字符串，刚开始拿到这个完全是一头雾水，于是乎决定彻底的将HTTPS以及RSA加密进行了一遍梳理，顺便记录下来。分享给有需求的小伙伴们。 HTTPS与SSLHTTP与HTTPS的区别HTTPS本质上也是HTTP，只不过它添加了更安全的SSL（Secure Socket Layer），一个用于保障通信安全的层。   总结一下HT">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HTTPS及RSA加密">
+<meta property="og:url" content="http://yoursite.com/2016/05/20/https/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="最近在苏宁的项目中，有一个需要在客户端加签的需求，后台只提供了我一串公钥的字符串，刚开始拿到这个完全是一头雾水，于是乎决定彻底的将HTTPS以及RSA加密进行了一遍梳理，顺便记录下来。分享给有需求的小伙伴们。 HTTPS与SSLHTTP与HTTPS的区别HTTPS本质上也是HTTP，只不过它添加了更安全的SSL（Secure Socket Layer），一个用于保障通信安全的层。   总结一下HT">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/RSA%E5%8A%A0%E5%AF%86%E7%A4%BA%E6%84%8F%E5%9B%BE.png?raw=true">
+<meta property="og:updated_time" content="2016-05-23T16:35:30.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="HTTPS及RSA加密">
+<meta name="twitter:description" content="最近在苏宁的项目中，有一个需要在客户端加签的需求，后台只提供了我一串公钥的字符串，刚开始拿到这个完全是一头雾水，于是乎决定彻底的将HTTPS以及RSA加密进行了一遍梳理，顺便记录下来。分享给有需求的小伙伴们。 HTTPS与SSLHTTP与HTTPS的区别HTTPS本质上也是HTTP，只不过它添加了更安全的SSL（Secure Socket Layer），一个用于保障通信安全的层。   总结一下HT">
+<meta name="twitter:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/RSA%E5%8A%A0%E5%AF%86%E7%A4%BA%E6%84%8F%E5%9B%BE.png?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> HTTPS及RSA加密 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                HTTPS及RSA加密
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-05-20T23:00:00+08:00" content="2016-05-20">
+              2016-05-20
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p><strong>最近在苏宁的项目中，有一个需要在客户端加签的需求，后台只提供了我一串公钥的字符串，刚开始拿到这个完全是一头雾水，于是乎决定彻底的将HTTPS以及RSA加密进行了一遍梳理，顺便记录下来。分享给有需求的小伙伴们。</strong></p>
+<h2 id="HTTPS与SSL"><a href="#HTTPS与SSL" class="headerlink" title="HTTPS与SSL"></a>HTTPS与SSL</h2><h3 id="HTTP与HTTPS的区别"><a href="#HTTP与HTTPS的区别" class="headerlink" title="HTTP与HTTPS的区别"></a>HTTP与HTTPS的区别</h3><p>HTTPS本质上也是HTTP，只不过它添加了更安全的SSL（Secure Socket Layer），一个用于保障通信安全的层。  </p>
+<h5 id="总结一下HTTP与HTTPS的区别："><a href="#总结一下HTTP与HTTPS的区别：" class="headerlink" title="总结一下HTTP与HTTPS的区别："></a>总结一下HTTP与HTTPS的区别：</h5><p>1，HTTPS需要使用正规机构颁发的CA证书。<br>2，HTTP是超文本传输协议，信息明文传输。HTTPS是安全的SSL加传输协议。<br>3，HTTP与HTTPS的连接方式、端口不一样，HTTP的端口是80，HTTPS的端口是443。  </p>
+<h3 id="SSL-TLS的运行机制"><a href="#SSL-TLS的运行机制" class="headerlink" title="SSL/TLS的运行机制"></a>SSL/TLS的运行机制</h3><h5 id="不使用SSL的HTTP通信，也就是不加密的通信，它存在三个风险："><a href="#不使用SSL的HTTP通信，也就是不加密的通信，它存在三个风险：" class="headerlink" title="不使用SSL的HTTP通信，也就是不加密的通信，它存在三个风险："></a>不使用SSL的HTTP通信，也就是不加密的通信，它存在三个风险：</h5><p>1，窃听风险，第三方可以获取通信的内容。<br>2，篡改风险，通信内容可以被修改。<br>3，冒充风险，冒充身份进行通信。<br><strong>SSL正是为了解决这三大风险而设计，它拥有：加密传输、校验机制和身份认证。</strong></p>
+<h3 id="SSL协议的握手过程"><a href="#SSL协议的握手过程" class="headerlink" title="SSL协议的握手过程"></a>SSL协议的握手过程</h3><p>SSL加密通信，在开始加密通信之前，客户端和服务器首先必须建立连接和交换参数，也就是握手的过程。握手的过程分为五步：<br>1，Client向Server发送请求，并发送协议版本号、客户端生成的随机数、支持的加密方式。<br>2，Server确认双方使用的加密方式，发送Server生成的随机数和数字证书。<br>3，Client确认数字证书的有效性，再生成一个新的随机数，并使用有效的证书加密这个随机数，发送给Server。<br>4，Server使用自己的私钥，解密Client发来的随机数。<br>5，Client和Server根据约定的加密方法，使用前面的三个随机数，生成对话秘钥，用来加密接下来的整个对话过程，对话秘钥是对称加密。而服务器的公钥放在Server的数字证书中，它的公钥和私钥只用于加密和解密这个对话秘钥。</p>
+<p>（对称加密：秘钥只有一个，加密解密使用同一个，典型的加密算法有DES和AES。<br>非对称加密：有一个公钥和私钥，加解密使用不同的秘钥，公钥加密要用私钥解密，私钥加签，需要用公钥解签。典型的非对称加密有RSA、DSA。）  </p>
+<p>在IOS开发过程中，如果请求接口为HTTPS，而服务器返回来的证书是自签名证书，网络连接会发生错误。出于安全性考虑，我们最好使用正规机构颁发的CA证书，接收任何机构颁发的证书将会危害数据的完整性和安全性。在没有合法证书的情况下，为了使用HTTPS，我们可以手动的关掉证书验证：  </p>
+<pre><code>#if KAllowInvalidHttps
+request.validatesSecureCertificate = YES;
+#else
+request.validatesSecureCertificate = YES;
+#endif 
+// 在配置文件中，添加一个宏定义，可以定义打开或者关系，在发送网络请求时，选择是否忽略安全证书。
+</code></pre><h3 id="如何添加双向认证"><a href="#如何添加双向认证" class="headerlink" title="如何添加双向认证"></a>如何添加双向认证</h3><p>上面的SSL握手里提到客户端验证服务器证书是否合法的过程，对于双向认证，顾名思义，也就是服务器也要确认客户端是否合法。Server要验证Client发送的证书，如果没有验证通过，则拒绝连接，这样做无疑是更安全的。它的过程如下：<br>首先服务器提供一个ssl证书（提供给客户端用的是.crt文件），最后要转成.cer<br>文件放到我们工程中。如果我们使用的是AFN网络库，要做一些证书的配置。  </p>
+<pre><code> // 首先拿到证书文件
+ NSString * cerPatch = [[NSBundle mainBundle] pathForResource:@&quot;rsa_public_key&quot; ofType:@&quot;rsa_public_key&quot; inDirectory:nil];
+NSData * cerData = [NSData dataWithContentsOfFile:cerPatch];
+// 使用证书验证模式
+AFSecurityPolicy *securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeCertificate];
+// 不允许使用自签名证书
+securityPolicy.allowInvalidCertificates = NO;
+// 验证域名，证书上配置的域名要与我们请求的域名相同，不然链接失败。
+securityPolicy.validatesDomainName = NO;
+// 设置证书
+securityPolicy.pinnedCertificates = @[certData];
+</code></pre><h3 id="RSA加密算法"><a href="#RSA加密算法" class="headerlink" title="RSA加密算法"></a>RSA加密算法</h3><p>RSA公钥加密体制包含如下三个算法：<br>1，秘钥生成算法（ketgen）<br>2，加密算法（encrypt）<br>3，解密算法（decrypt）<br>关于算法的具体描述，这里不详细解释，推荐一篇极好的博客：<br>[阮一峰的博客：RSA加密算法]（<a href="http://www.ruanyifeng.com/blog/2013/06/rsa_algorithm_part_one.html）" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2013/06/rsa_algorithm_part_one.html）</a>  </p>
+<h3 id="加签"><a href="#加签" class="headerlink" title="加签"></a>加签</h3><p>RSA的签名算法：<br>1，秘钥生成算法（ketgen）<br>2，加签算法（sign）<br>3，验签算法（verify）<br>签名算法中的加签算法与加密算法中的加密算法非常像，私钥用于对数据进行签名，公钥用于验签。加签很容易让人产生迷惑，到底加签和加密的区别是什么呢。这时候我们需要先考虑一下加签的意义是什么，加签的根本目的是防抵赖，也就是说，通过加签，我们可以证明发送者是自己而不是别人，下面是一个完整的过程示意：<br><img src="https://github.com/artjing/BLOGIMAGE/blob/master/RSA%E5%8A%A0%E5%AF%86%E7%A4%BA%E6%84%8F%E5%9B%BE.png?raw=true" alt="image">  </p>
+<h3 id="如何在MAC下生成我们需要的证书格式"><a href="#如何在MAC下生成我们需要的证书格式" class="headerlink" title="如何在MAC下生成我们需要的证书格式"></a>如何在MAC下生成我们需要的证书格式</h3><p>稍后添加，敬请期待。。。 </p>
+<h3 id="一些相关的名词解释"><a href="#一些相关的名词解释" class="headerlink" title="一些相关的名词解释"></a>一些相关的名词解释</h3><h5 id="OpenSSL"><a href="#OpenSSL" class="headerlink" title="OpenSSL"></a>OpenSSL</h5><p>它是SSL的一个实现。</p>
+<h5 id="X509证书"><a href="#X509证书" class="headerlink" title="X509证书"></a>X509证书</h5><p>X509是证书的一种标准，它定义了证书中应该包含哪些内容，共包含两种编码格式：  </p>
+<p><strong>PEM:</strong>  ———begin—————end———— 作为开头和结尾，采用Base64编码。</p>
+<p><strong>DER:</strong>  二进制编码。  </p>
+<p><strong>CER、CRT：</strong>还有其它的证书格式例如：CER、CRT(certification)。可能是PEM或者DER，可打开查看格式知道。  </p>
+<p><strong>CSR:</strong> 非证书，证书签名请求，例如想苹果请求开发者证书时使用。</p>
+<h5 id="P12证书："><a href="#P12证书：" class="headerlink" title="P12证书："></a>P12证书：</h5><p>是PKCS12的简称，PKCS是一个证书标准的缩写。P12将CRT和KEY存放在一起，用于存放个人证书或者私钥，有一个提取秘钥，通常使用DER编码，所以我们在自己生成P12证书的时候，先将PEM证书转换成DER证书，再生成P12证书。</p>
+<h5 id="生成P12的方法："><a href="#生成P12的方法：" class="headerlink" title="生成P12的方法："></a>生成P12的方法：</h5><p>先用openssl创建CA证书，也就是PEM文件。再用openssl将PEM文件转成DER文件。最后用X509转为PKCS12格式的证书，其包含公钥/私钥及其证书。  </p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/20/RUNLOOP/" rel="next" title="走进RunLoop">
+                <i class="fa fa-chevron-left"></i> 走进RunLoop
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/20/重构：利用objction实现组件化开发/" rel="prev" title="重构：利用objction实现组件化开发">
+                重构：利用objction实现组件化开发 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTPS与SSL"><span class="nav-number">1.</span> <span class="nav-text">HTTPS与SSL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#HTTP与HTTPS的区别"><span class="nav-number">1.1.</span> <span class="nav-text">HTTP与HTTPS的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#总结一下HTTP与HTTPS的区别："><span class="nav-number">1.1.0.1.</span> <span class="nav-text">总结一下HTTP与HTTPS的区别：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SSL-TLS的运行机制"><span class="nav-number">1.2.</span> <span class="nav-text">SSL/TLS的运行机制</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#不使用SSL的HTTP通信，也就是不加密的通信，它存在三个风险："><span class="nav-number">1.2.0.1.</span> <span class="nav-text">不使用SSL的HTTP通信，也就是不加密的通信，它存在三个风险：</span></a></li></ol></li></ol><li class="nav-item nav-level-3"><a class="nav-link" href="#SSL协议的握手过程"><span class="nav-number">1.3.</span> <span class="nav-text">SSL协议的握手过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何添加双向认证"><span class="nav-number">1.4.</span> <span class="nav-text">如何添加双向认证</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RSA加密算法"><span class="nav-number">1.5.</span> <span class="nav-text">RSA加密算法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#加签"><span class="nav-number">1.6.</span> <span class="nav-text">加签</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#如何在MAC下生成我们需要的证书格式"><span class="nav-number">1.7.</span> <span class="nav-text">如何在MAC下生成我们需要的证书格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#一些相关的名词解释"><span class="nav-number">1.8.</span> <span class="nav-text">一些相关的名词解释</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#OpenSSL"><span class="nav-number">1.8.0.1.</span> <span class="nav-text">OpenSSL</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#X509证书"><span class="nav-number">1.8.0.2.</span> <span class="nav-text">X509证书</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#P12证书："><span class="nav-number">1.8.0.3.</span> <span class="nav-text">P12证书：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#生成P12的方法："><span class="nav-number">1.8.0.4.</span> <span class="nav-text">生成P12的方法：</span></a></li></ol></li></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

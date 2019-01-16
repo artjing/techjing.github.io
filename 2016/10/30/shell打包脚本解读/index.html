@@ -1,0 +1,1077 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="几年前刚开始接触ios开发的时候，就已经开始用脚本进行自动化打包，但那个时候，只是复制了别人的东西来用，没有深究它其中的原理。我们都知道，shell是一个在开发中经常要用到的脚本，所以决心整理一下脚本相关的东西，一个是熟悉shell的语句，再是可以深入的理解xcode的编译机制。  xcodebuild 简介xcodebuild是苹果提供的打包项目或者工程的命令，通常打包用xcodebuild和x">
+<meta property="og:type" content="article">
+<meta property="og:title" content="shell自动打包脚本解读">
+<meta property="og:url" content="http://yoursite.com/2016/10/30/shell打包脚本解读/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="几年前刚开始接触ios开发的时候，就已经开始用脚本进行自动化打包，但那个时候，只是复制了别人的东西来用，没有深究它其中的原理。我们都知道，shell是一个在开发中经常要用到的脚本，所以决心整理一下脚本相关的东西，一个是熟悉shell的语句，再是可以深入的理解xcode的编译机制。  xcodebuild 简介xcodebuild是苹果提供的打包项目或者工程的命令，通常打包用xcodebuild和x">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2016-10-30T13:13:17.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="shell自动打包脚本解读">
+<meta name="twitter:description" content="几年前刚开始接触ios开发的时候，就已经开始用脚本进行自动化打包，但那个时候，只是复制了别人的东西来用，没有深究它其中的原理。我们都知道，shell是一个在开发中经常要用到的脚本，所以决心整理一下脚本相关的东西，一个是熟悉shell的语句，再是可以深入的理解xcode的编译机制。  xcodebuild 简介xcodebuild是苹果提供的打包项目或者工程的命令，通常打包用xcodebuild和x">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> shell自动打包脚本解读 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                shell自动打包脚本解读
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-10-30T23:59:25+08:00" content="2016-10-30">
+              2016-10-30
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>几年前刚开始接触ios开发的时候，就已经开始用脚本进行自动化打包，但那个时候，只是复制了别人的东西来用，没有深究它其中的原理。我们都知道，shell是一个在开发中经常要用到的脚本，所以决心整理一下脚本相关的东西，一个是熟悉shell的语句，再是可以深入的理解xcode的编译机制。 </p>
+<h2 id="xcodebuild-简介"><a href="#xcodebuild-简介" class="headerlink" title="xcodebuild 简介"></a>xcodebuild 简介</h2><p>xcodebuild是苹果提供的打包项目或者工程的命令，通常打包用xcodebuild和xcrun两个命令，xcodebuild负责编译，xcrun负责将app打成ipa。  </p>
+<pre><code>/usr/bin/xcodebuild -target targetName clean // 清理工程 
+/usr/bin/xcodebuild -target targetName // 编译工程 
+xcodebuild -target targetName CODE_SIGN_IDENTITY=&quot;iPhone Distribution:XXX&quot;
+xcrun -sdk iphoneos PackageApplication -v .app souce path -o .app to path --sign &quot;iPhone Distribution:XXXXXX&quot;
+</code></pre><h2 id="shell脚本之–自动打包"><a href="#shell脚本之–自动打包" class="headerlink" title="shell脚本之–自动打包"></a>shell脚本之–自动打包</h2><pre><code>// shell脚本程序必须以此作为开始
+#!/bin/bash 
+
+// set -e的作用是，在它之后出现的代码，只要返回非零，整个脚本立即退出，一般使用这个参数都是出于程序安全性的考虑
+set -e
+
+// #后面是注释
+#bundleIdentifier 
+
+// xx=&quot;&quot;代码定义一个变量
+bundle_id=&quot;com.suning.fanfan&quot;
+
+#appName
+app_name=“XXX”
+
+#workspace
+work_space=&quot;SecondHand.xcworkspace&quot;
+
+#scheme
+scheme=&quot;SecondHand&quot;
+
+// 使用变量时，才用$，${}一般用于连接变量与其它变量或常量等，例如${bundle_id}suning，相当于com.suning.fanfansuning
+#xocdebuild pre
+xcode_build=&quot;xcodebuild -workspace ${work_space} -scheme ${scheme} -configuration Release&quot;
+
+// $(pwd)是当前目录的全路径名称
+#工程绝对路径
+project_path=$(pwd)
+echo &quot;======工程路径：${project_path}======&quot;
+
+// 创建一个我们用于打包的路径，当前目录后面拼路径及时间区分。$(date +%Y-%m-%d_%H_%M)格式化输出日期，date -d &quot;1 day ago&quot; +&quot;%Y-%m-%d&quot;
+#创建保存打包结果的目录
+result_path=${project_path}/build/build_test_$(date +%Y-%m-%d_%H_%M)
+mkdir -p &quot;${result_path}&quot;
+echo &quot;======最终打包路径：${result_path}======&quot;
+
+// ls 的意思是把文件按照类型归类，并且在末尾加上/*等符号标识 
+|是管道输出，把前面命令的结果当做输入传给后面的命令 
+grep xcodeproj的意思是从中挑出以xcodeproj结尾的行 
+awk是一个强大的文本分析工具，它会将文件逐行的读入，以空格为默认的分隔符将每行进行切片，切开的部分再进行各种分析处理。它的语法一般是：awk &apos;{pattern + action}&apos; {filenames}，pattern标识awk在数据中查找的内容，而action是在找到匹配内容时所执行的一系列命令
+awk -F.xcodeproj &apos;{print $1}在下面的代码中，代笔的意思是，查找.xcodeproj内容，然后以空格分隔，取第一个。
+#工程配置文件路径
+project_name=$(ls | grep xcodeproj | awk -F.xcodeproj &apos;{print $1}&apos;)
+echo &quot;======工程文件名称：${project_name}======&quot;
+target_name=${project_name}
+echo &quot;======target名称：${target_name}======&quot;
+project_infoplist_path=&quot;${project_path}/${project_name}/Info.plist&quot;
+
+echo &quot;======Info.plist路径：${project_infoplist_path}======&quot;
+
+// PlistBuddy其实是一个OSX系统上读取plist文件的工具，它的位置在/usr/libexec/PlistBuddy，输出就用-c &quot;print CFBundleShortVersionString&quot; 后面接我们要读的plist的位置${project_infoplist_path}。
+#取版本号
+bundleShortVersion=$(/usr/libexec/PlistBuddy -c &quot;print CFBundleShortVersionString&quot; ${project_infoplist_path})
+echo &quot;======版本号：${bundleShortVersion}======&quot;
+
+#配置文件路径
+buildConfig=${project_path}/${project_name}/Classes/Constant/Constant.h
+
+#URL配置文件路径
+urlTypePlist_Path=&quot;${project_path}/${project_name}/Classes/APPConfig/    SNUrlDomainManagerUrlType.plist&quot;
+</code></pre><h6 id="定义配置函数"><a href="#定义配置函数" class="headerlink" title="定义配置函数"></a>定义配置函数</h6><pre><code>#定义配置函数
+###########################################定义函数###########################################
+
+function config()
+{
+#修改环境配置
+#pre
+// grep -n表示显示行号 -i表示不区分大小写，tail -1是查看最后1行内容，写几就是查看几行，cut  -d 后面接了一个符号“：”，代表以：作为分段，-f  1是取分段后的第一个。
+preConfigLine=$(grep -n &quot;kPreTest&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $preConfigLine ]; then
+// $1代表我们输入的第一个参数，-e是检查文件是否存在，sed -i &apos;&apos;是进行替换的操作，s/^.*$/#define kPreTest        1/的意思是，将刚才搜到的行号preConfigLine，这一行全都替换为#define kPreTest        1。
+if [[ $1 = &quot;-pre&quot; ]]; then
+sed -i &apos;&apos; -e &quot;${preConfigLine}s/^.*$/#define kPreTest        1/&quot; ${buildConfig}
+else
+sed -i &apos;&apos; -e &quot;${preConfigLine}s/^.*$/\/\/#define kPreTest        1/&quot; ${buildConfig}
+fi
+else
+echo -e &quot;\033[31m 未找到配置： kPreTest \033[0m&quot;
+fi
+
+#sit
+sitConfigLine=$(grep -n &quot;kSitTest&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $sitConfigLine ]; then
+if [[ $1 = &quot;-sit&quot; ]]; then
+sed -i &apos;&apos; -e &quot;${sitConfigLine}s/^.*$/#define kSitTest        1/&quot; ${buildConfig}
+else
+sed -i &apos;&apos; -e &quot;${sitConfigLine}s/^.*$/\/\/#define kSitTest        1/&quot; ${buildConfig}
+fi
+else
+echo -e &quot;\033[31m 未找到配置： kSitTest \033[0m&quot;
+fi
+
+#release
+releaseConfigLine=$(grep -n &quot;kReleaseH&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $releaseConfigLine ]; then
+if [[ $1 = &quot;-prd&quot; ]]; then
+sed -i &apos;&apos; -e &quot;${releaseConfigLine}s/^.*$/#define kReleaseH        1/&quot; ${buildConfig}
+else
+sed -i &apos;&apos; -e &quot;${releaseConfigLine}s/^.*$/\/\/#define kReleaseH        1/&quot; ${buildConfig}
+fi
+else
+echo -e &quot;\033[31m 未找到配置： kReleaseH \033[0m&quot;
+fi
+</code></pre><h6 id="检查信息搜集服务器"><a href="#检查信息搜集服务器" class="headerlink" title="检查信息搜集服务器"></a>检查信息搜集服务器</h6><pre><code>#2.3 检查信息搜集服务器
+#snclick pre
+tPreConfigLine=$(grep -n &quot;kPreInfoTest&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $tPreConfigLine ]; then
+sed -i &apos;&apos; -e &quot;${tPreConfigLine}s/^.*$/\/\/#define kPreInfoTest        1/&quot; ${buildConfig}
+else
+echo -e &quot;\033[31m 未找到配置： kPreInfoTest \033[0m&quot;
+fi
+
+#snclick sit
+tSitConfigLine=$(grep -n &quot;kSitInfoTest&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $tSitConfigLine ]; then
+// 判断是否发布状态，是的话，注释kSitInfoTest
+if [[ $2 = &quot;-publish&quot; ]]; then
+sed -i &apos;&apos; -e &quot;${tSitConfigLine}s/^.*$/\/\/#define kSitInfoTest        1/&quot; ${buildConfig}
+else
+sed -i &apos;&apos; -e &quot;${tSitConfigLine}s/^.*$/#define kSitInfoTest        1/&quot; ${buildConfig}
+fi
+else
+echo -e &quot;\033[31m 未找到配置： kSitInfoTest \033[0m&quot;
+fi
+
+#snclick release
+tReleaseConfigLine=$(grep -n &quot;kReleaseInfoH&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $tReleaseConfigLine ]; then
+if [[ $2 = &quot;-publish&quot; ]]; then
+sed -i &apos;&apos; -e &quot;${tReleaseConfigLine}s/^.*$/#define kReleaseInfoH        1/&quot; ${buildConfig}
+else
+sed -i &apos;&apos; -e &quot;${tReleaseConfigLine}s/^.*$/\/\/#define kReleaseInfoH        1/&quot; ${buildConfig}
+fi
+else
+echo -e &quot;\033[31m 未找到配置： kReleaseInfoH \033[0m&quot;
+fi
+</code></pre><h6 id="检查打印开关"><a href="#检查打印开关" class="headerlink" title="检查打印开关"></a>检查打印开关</h6><pre><code>// “\”这里后面要接特殊符号，if [ $logLine ]是检查变量是否存在的格式。
+#2.4 检查打印开关
+logLine=$(grep -n &quot;define\ DEBUGLOG&quot; &quot;${buildConfig}&quot; | tail -1 | cut  -d  &quot;:&quot;  -f  1)
+if [ $logLine ]; then
+sed -i &apos;&apos; -e &quot;${logLine}s/^.*$/\/\/#define DEBUGLOG 1/&quot; ${buildConfig}
+else
+echo -e &quot;\033[31m 未找到配置： DEBUGLOG \033[0m&quot;
+fi
+
+#如果是发布，再检查下bundleIdentifier 和 国际化名称
+if [[ $2 = &quot;-publish&quot; ]]; then
+#修改bundleIdentifier
+bundleIdNew=&quot;${bundle_id}${versionShort}prd&quot;
+/usr/libexec/PlistBuddy -c &quot;set CFBundleIdentifier ${bundle_id}&quot; ${project_infoplist_path}
+</code></pre><h6 id="国际化名称"><a href="#国际化名称" class="headerlink" title="国际化名称"></a>国际化名称</h6><pre><code>// s/pattern/xxxx/ 是sed命令，用来做字符串替换，pattern是要被替换的字符串的正则表达式，
+#国际化名称
+#infoString=${project_path}/${project_name}/zh-Hans.lproj/InfoPlist.strings
+#sed -i &apos;&apos; -e &quot;4s/^.*$/CFBundleDisplayName = \&quot;${app_name}\&quot;;/&quot; ${infoString}
+
+#发布时要打开https证书信任验证
+validatesSecureFile=${project_path}/${project_name}/Common/Http/HttpMsgCtrl.mm
+validatesSecureLine=$(grep -n &quot;request.validatesSecureCertificate&quot; &quot;${validatesSecureFile}&quot; | tail -1 | cut -d &quot;:&quot; -f 1)
+if [ $validatesSecureLine ]; then
+sed -i &apos;&apos; -e &quot;${validatesSecureLine}s/NO/YES/g&quot; ${validatesSecureFile}
+else
+echo -e &quot;\033[31m 未找到：validatesSecureCertificate \033[0m&quot;
+fi
+fi
+}
+</code></pre><p>检验参数<br>$0 ： ./test.sh,即命令本身，相当于C/C++中的argv[0] </p>
+<p>$1 ： -f,第一个参数 </p>
+<p>$2 ： config.conf </p>
+<p>$3, $4 … ：类推 </p>
+<p>$#  参数的个数，不包括命令本身，上例中$#为4. </p>
+<p>$@ ：参数本身的列表，也不包括命令本身，如上例为 -f config.conf -v –prefix=/home </p>
+<p>$* ：和$@相同 </p>
+<pre><code>##检验参数
+#检查是否含-u参数，包含即上传
+needUpload=false
+#检查打什么包 -pre -sit -prd 如果三者都没有，默认都打
+prd_should=false
+pre_should=false
+sit_should=false
+
+#只修改配置
+just_config=false
+#忽略证书检查
+ignore_check_codesign=true
+
+if [[ $1 = &quot;config&quot; ]]; then
+config $2 $3
+exit
+fi
+// $#代表参数个数，-gt代表大于的判断，-eq等于，-ne不等于，le小于，$arg代表参数，$@是所有参数，下面命令的意思是遍历所有参数，判断并赋值变量。
+if [[ $# -gt 0 ]]; then
+for arg in &quot;$@&quot;
+do
+if [[ $arg = &quot;-u&quot; ]]; then
+needUpload=true
+elif [[ $arg = &quot;-pre&quot; ]]; then
+pre_should=true
+elif [[ $arg = &quot;-prd&quot; ]]; then
+prd_should=true
+elif [[ $arg = &quot;-sit&quot; ]]; then
+sit_should=true
+elif [[ $arg = &quot;-all&quot; ]]; then
+pre_should=true
+prd_should=true
+sit_should=true
+elif [[ $arg = &quot;-ignore-codesign&quot; ]]; then
+ignore_check_codesign=true
+fi
+done
+fi
+
+#如果没有设置，默认都为yes
+if ! $prd_should &amp;&amp; ! $pre_should &amp;&amp; ! $sit_should; then
+pre_should=true
+prd_should=true
+sit_should=true
+fi
+</code></pre><h6 id="检查xcodebuild版本"><a href="#检查xcodebuild版本" class="headerlink" title="检查xcodebuild版本"></a>检查xcodebuild版本</h6><pre><code>#echo &quot;======检查是否支持iphoneos7.0======&quot;
+#isSupport7=$(xcodebuild -showsdks | grep &quot;iphoneos7&quot;)
+#isSupport8=$(xcodebuild -showsdks | grep &quot;iphoneos8.0&quot;)
+#if [ &quot;${isSupport7}&quot; == &quot;&quot; ] -a [ &quot;${isSupport8}&quot; == &quot;&quot; ]; then
+#    echo -e &quot;\033[31m 请升级你的命令行版本，使其支持ios7.0以上 \033[0m&quot;
+#    exit
+#fi
+</code></pre><h6 id="编译配置打印到文件中"><a href="#编译配置打印到文件中" class="headerlink" title="编译配置打印到文件中"></a>编译配置打印到文件中</h6><pre><code>// result_path是上面自己创建的带时间的文件夹，在这个文件夹下生成一个txt文件，用于将当前工程 build setting 的配置参数的结果保存。 
+
+setting_out=${result_path}/build_setting.txt
+${xcode_build}  -showBuildSettings &gt; ${setting_out}
+</code></pre><h6 id="编译路径"><a href="#编译路径" class="headerlink" title="编译路径"></a>编译路径</h6><pre><code>// -o 只输出文件中匹配到的部分,^一行开头 .*任意长字符 $一行结束 ^.*$ 表示整行。CONFIGURATION_BUILD_DIR里面会保存着xcode编译的路径。
+#编译路径
+build_dir=$(grep &quot;CONFIGURATION_BUILD_DIR&quot; &quot;${setting_out}&quot; | cut  -d  &quot;=&quot;  -f  2 | grep -o &quot;[^ ]\+\( \+[^ ]\+\)*&quot;)
+echo &quot;编译路径：${build_dir}&quot;
+</code></pre><h6 id="打包完的程序目录"><a href="#打包完的程序目录" class="headerlink" title="打包完的程序目录"></a>打包完的程序目录</h6><pre><code>#打包完的程序目录
+appDir=${build_dir}/${target_name}.app;
+#dSYM的路径
+dsymDir=${build_dir}/${target_name}.app.dSYM;
+if ! $ignore_check_codesign; then 
+</code></pre><h6 id="检查工程中证书的选择"><a href="#检查工程中证书的选择" class="headerlink" title="检查工程中证书的选择"></a>检查工程中证书的选择</h6><pre><code>#检查工程中证书的选择
+echo &quot;======检查是否选择了正确的发布证书======&quot;
+
+codeSign=$(grep &quot;CODE_SIGN_IDENTITY&quot; &quot;${setting_out}&quot; | cut  -d  &quot;=&quot;  -f  2 | grep -o &quot;[^ ]\+\( \+[^ ]\+\)*&quot;)
+rightDistributionSign=&quot;iPhone Distribution: Suning Appliance Co., Ltd.&quot;
+if [ &quot;${codeSign}&quot; != &quot;${rightDistributionSign}&quot; ]; then
+echo -e &quot;\033[31m 错误的证书:${codeSign}，请进入xcode选择证书为:${rightDistributionSign} \033[0m&quot;
+exit
+fi
+</code></pre><h6 id="检查授权文件"><a href="#检查授权文件" class="headerlink" title="检查授权文件"></a>检查授权文件</h6><pre><code>#检查授权文件
+echo &quot;======检查是否选择了正确的签名文件======&quot;
+provisionProfile=$(grep &quot;PROVISIONING_PROFILE[^_]&quot; &quot;${setting_out}&quot; | cut  -d  &quot;=&quot;  -f  2 | grep -o &quot;[^ ]\+\( \+[^ ]\+\)*&quot;)
+rightProvision=&quot;c59f649f-edb5-4a18-a4fe-870eb7b52d8d&quot;   
+#这个是企业证书的id
+if [ &quot;${provisionProfile}&quot; != &quot;${rightProvision}&quot; ]; then
+echo -e ${provisionProfile}
+echo -e &quot;\033[31m 错误的签名，请进入xcode重新选择授权文件 \033[0m&quot;
+exit
+fi
+fi
+
+versionShort=$(echo ${bundleShortVersion} | sed &quot;s/\.//g&quot;)
+
+#############################################PRD#############################################
+</code></pre><p>打生产环境测试包 </p>
+<pre><code>if $prd_should; then 
+#打生产环境测试包
+echo &quot;======打生产环境的测试包======&quot;
+echo &quot;======修改配置中======&quot;
+</code></pre><p>修改URL配置  </p>
+<pre><code>// urlTypePlist_Path是上面得到的URLDomin的地址
+#修改URL配置
+/usr/libexec/PlistBuddy -c &quot;set URLConfig 0&quot; ${urlTypePlist_Path}
+</code></pre><p>修改bundleIdentifier </p>
+<pre><code>#修改bundleIdentifier
+bundleIdNew=&quot;${bundle_id}${versionShort}prd&quot;
+/usr/libexec/PlistBuddy -c &quot;set CFBundleIdentifier ${bundleIdNew}&quot; ${project_infoplist_path}
+</code></pre><p>修改环境配置 </p>
+<pre><code>#修改环境配置
+config -prd;
+</code></pre><p>国际化名称 </p>
+<pre><code>#国际化名称
+#infoString=${project_path}/${project_name}/zh-Hans.lproj/InfoPlist.strings
+#sed -i &apos;&apos; -e &quot;4s/^.*$/CFBundleDisplayName = \&quot;PRD${versionShort}.$(date +%m%d%H)\&quot;;/&quot; ${infoString}
+</code></pre><p>编译工程</p>
+<pre><code>#编译工程
+${xcode_build} -sdk iphoneos build || exit
+</code></pre><p>ipa名称 </p>
+<pre><code>#ipa名称
+ipa_name=&quot;${result_path}/${bundleIdNew}.ipa&quot;
+</code></pre><p>先打第一个appStore渠道的包 </p>
+<pre><code>#先打第一个appStore渠道的包
+xcrun -sdk iphoneos PackageApplication -v &quot;${appDir}&quot; -o &quot;${ipa_name}&quot;
+#xcrun -sdk iphoneos PackageApplication -v &quot;${appDir}&quot; -o &quot;${ipa_name}&quot; --sign &quot;${enterpriseSign}&quot; --embed &quot;${enterpriseEmbed}&quot;
+
+拷贝过来.app和.app.dSYM放在子目录 
+// mkdir -p 是创建两级目录，相当于执行两次mkdir ，cp -R是拷贝文件和它所在的目录
+#拷贝过来.app和.app.dSYM放在子目录
+mkdir -p &quot;${result_path}/prd&quot;
+cp -R &quot;${appDir}&quot; &quot;${result_path}/prd/${target_name}.app&quot;
+cp -R &quot;${dsymDir}&quot; &quot;${result_path}/prd/${target_name}.app.dSYM&quot; 
+</code></pre><p>上传测试包prd </p>
+<pre><code>#上传测试包prd
+// curl -F是上传文件的命令
+if $needUpload; then
+curl -F &quot;app=${appId}&quot; -F &quot;version=${versionId}&quot; -F &quot;bundleIdentifier=${bundleIdNew}&quot; -F &quot;desc=${bundleIdNew}&quot; -F &quot;file=@${ipa_name}&quot; ${uploadUrl}
+fi
+fi
+
+#############################################PRE#############################################
+
+if $pre_should; then
+#打PRE环境测试包
+echo &quot;======打PRE环境的测试包======&quot;
+echo &quot;======修改配置中======&quot;
+
+#修改URL配置
+/usr/libexec/PlistBuddy -c &quot;set URLConfig 1&quot; ${urlTypePlist_Path}
+
+#修改bundleIdentifier
+bundleIdNew=&quot;${bundle_id}${versionShort}pre&quot;
+/usr/libexec/PlistBuddy -c &quot;set CFBundleIdentifier ${bundleIdNew}&quot; ${project_infoplist_path}
+
+#修改环境配置
+config -pre
+
+#国际化名称
+#infoString=${project_path}/${project_name}/zh-Hans.lproj/InfoPlist.strings
+#sed -i &apos;&apos; -e &quot;4s/^.*$/CFBundleDisplayName = \&quot;PRE${versionShort}.$(date +%m%d%H)\&quot;;/&quot; ${infoString}
+
+#编译工程
+${xcode_build} -sdk iphoneos build || exit
+
+#ipa名称
+ipa_name=&quot;${result_path}/${bundleIdNew}.ipa&quot;
+#先打第一个appStore渠道的包
+xcrun -sdk iphoneos PackageApplication -v &quot;${appDir}&quot; -o &quot;${ipa_name}&quot;
+#xcrun -sdk iphoneos PackageApplication -v &quot;${appDir}&quot; -o &quot;${ipa_name}&quot; --sign &quot;${enterpriseSign}&quot; --embed &quot;${enterpriseEmbed}&quot;
+#拷贝过来.app和.app.dSYM放在子目录
+mkdir -p &quot;${result_path}/pre&quot;
+cp -R &quot;${appDir}&quot; &quot;${result_path}/pre/${target_name}.app&quot;
+cp -R &quot;${dsymDir}&quot; &quot;${result_path}/pre/${target_name}.app.dSYM&quot;
+
+#上传测试包pre
+if $needUpload; then
+curl -F &quot;app=${appId}&quot; -F &quot;version=${versionId}&quot; -F &quot;bundleIdentifier=${bundleIdNew}&quot; -F &quot;desc=${bundleIdNew}&quot; -F &quot;file=@${ipa_name}&quot; ${uploadUrl}
+fi
+fi
+
+#############################################SIT#############################################
+
+if $sit_should; then
+#打PRE环境测试包
+echo &quot;======打SIT环境的测试包======&quot;
+echo &quot;======修改配置中======&quot;
+
+ #修改URL配置
+ /usr/libexec/PlistBuddy -c &quot;set URLConfig 2&quot; ${urlTypePlist_Path}
+
+#修改bundleIdentifier
+bundleIdNew=&quot;${bundle_id}${versionShort}sit&quot;
+/usr/libexec/PlistBuddy -c &quot;set CFBundleIdentifier ${bundleIdNew}&quot; ${project_infoplist_path}
+#修改环境配置
+config -sit
+#国际化名称
+#infoString=${project_path}/${project_name}/zh-Hans.lproj/InfoPlist.strings
+#sed -i &apos;&apos; -e &quot;4s/^.*$/CFBundleDisplayName = \&quot;SIT${versionShort}.$(date +%m%d%H)\&quot;;/&quot; ${infoString}
+
+#编译工程
+${xcode_build} -sdk iphoneos build || exit
+
+#ipa名称
+ipa_name=&quot;${result_path}/${bundleIdNew}.ipa&quot;
+#先打第一个appStore渠道的包
+xcrun -sdk iphoneos PackageApplication -v &quot;${appDir}&quot; -o &quot;${ipa_name}&quot;
+#xcrun -sdk iphoneos PackageApplication -v &quot;${appDir}&quot; -o &quot;${ipa_name}&quot; --sign &quot;${enterpriseSign}&quot; --embed &quot;${enterpriseEmbed}&quot;
+#拷贝过来.app和.app.dSYM放在子目录
+mkdir -p &quot;${result_path}/sit&quot;
+cp -R &quot;${appDir}&quot; &quot;${result_path}/sit/${target_name}.app&quot;
+cp -R &quot;${dsymDir}&quot; &quot;${result_path}/sit/${target_name}.app.dSYM&quot;
+
+#上传测试包sit
+if $needUpload; then
+curl -F &quot;app=${appId}&quot; -F &quot;version=${versionId}&quot; -F &quot;bundleIdentifier=${bundleIdNew}&quot; -F &quot;desc=${bundleIdNew}&quot; -F &quot;file=@${ipa_name}&quot; ${uploadUrl}
+fi
+fi
+
+#############################################还原配置#############################################
+
+#修改URL配置
+/usr/libexec/PlistBuddy -c &quot;set URLConfig 0&quot; ${urlTypePlist_Path}
+
+/usr/libexec/PlistBuddy -c &quot;set CFBundleIdentifier ${bundle_id}&quot; ${project_infoplist_path}
+sed -i &apos;&apos; -e &quot;4s/^.*$/CFBundleDisplayName = \&quot;${app_name}\&quot;;/&quot; ${infoString}
+</code></pre>
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/30/翻翻小视频录制原理/" rel="next" title="翻翻小视频录制原理">
+                <i class="fa fa-chevron-left"></i> 翻翻小视频录制原理
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/06/17/多线程之GCD(下篇/" rel="prev" title="符号化IOS崩溃日志，解读堆栈信息">
+                符号化IOS崩溃日志，解读堆栈信息 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#xcodebuild-简介"><span class="nav-number">1.</span> <span class="nav-text">xcodebuild 简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#shell脚本之–自动打包"><span class="nav-number">2.</span> <span class="nav-text">shell脚本之–自动打包</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#定义配置函数"><span class="nav-number">2.0.0.0.1.</span> <span class="nav-text">定义配置函数</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#检查信息搜集服务器"><span class="nav-number">2.0.0.0.2.</span> <span class="nav-text">检查信息搜集服务器</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#检查打印开关"><span class="nav-number">2.0.0.0.3.</span> <span class="nav-text">检查打印开关</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#国际化名称"><span class="nav-number">2.0.0.0.4.</span> <span class="nav-text">国际化名称</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#检查xcodebuild版本"><span class="nav-number">2.0.0.0.5.</span> <span class="nav-text">检查xcodebuild版本</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#编译配置打印到文件中"><span class="nav-number">2.0.0.0.6.</span> <span class="nav-text">编译配置打印到文件中</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#编译路径"><span class="nav-number">2.0.0.0.7.</span> <span class="nav-text">编译路径</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#打包完的程序目录"><span class="nav-number">2.0.0.0.8.</span> <span class="nav-text">打包完的程序目录</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#检查工程中证书的选择"><span class="nav-number">2.0.0.0.9.</span> <span class="nav-text">检查工程中证书的选择</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#检查授权文件"><span class="nav-number">2.0.0.0.10.</span> <span class="nav-text">检查授权文件</span></a></li></ol></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

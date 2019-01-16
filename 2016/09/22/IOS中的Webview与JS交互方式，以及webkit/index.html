@@ -1,0 +1,802 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="UIWebView与Js的三种交互方式浏览器内核——WebKitwebkit介绍  webkit是一个开源的浏览器框架，safari是在这个基础上开发的，它后面又做了大量的优化改进工作，webkit可以理解为一个排版引擎，除了它之外，浏览器还需要外壳UI，读取网络数据用的CURL库，LibPng/LibJpg图形处理，SQLitx小型关系数据库，js解析引擎，移植层有GUI、FileSystom、">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UIWebView与Js的三种交互方式">
+<meta property="og:url" content="http://yoursite.com/2016/09/22/IOS中的Webview与JS交互方式，以及webkit/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="UIWebView与Js的三种交互方式浏览器内核——WebKitwebkit介绍  webkit是一个开源的浏览器框架，safari是在这个基础上开发的，它后面又做了大量的优化改进工作，webkit可以理解为一个排版引擎，除了它之外，浏览器还需要外壳UI，读取网络数据用的CURL库，LibPng/LibJpg图形处理，SQLitx小型关系数据库，js解析引擎，移植层有GUI、FileSystom、">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2016-10-30T13:21:03.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="UIWebView与Js的三种交互方式">
+<meta name="twitter:description" content="UIWebView与Js的三种交互方式浏览器内核——WebKitwebkit介绍  webkit是一个开源的浏览器框架，safari是在这个基础上开发的，它后面又做了大量的优化改进工作，webkit可以理解为一个排版引擎，除了它之外，浏览器还需要外壳UI，读取网络数据用的CURL库，LibPng/LibJpg图形处理，SQLitx小型关系数据库，js解析引擎，移植层有GUI、FileSystom、">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> UIWebView与Js的三种交互方式 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                UIWebView与Js的三种交互方式
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-09-22T23:00:25+08:00" content="2016-09-22">
+              2016-09-22
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="UIWebView与Js的三种交互方式"><a href="#UIWebView与Js的三种交互方式" class="headerlink" title="UIWebView与Js的三种交互方式"></a>UIWebView与Js的三种交互方式</h3><h5 id="浏览器内核——WebKit"><a href="#浏览器内核——WebKit" class="headerlink" title="浏览器内核——WebKit"></a>浏览器内核——WebKit</h5><p><strong>webkit介绍</strong> </p>
+<p>webkit是一个开源的浏览器框架，safari是在这个基础上开发的，它后面又做了大量的优化改进工作，webkit可以理解为一个排版引擎，除了它之外，浏览器还需要外壳UI，读取网络数据用的CURL库，LibPng/LibJpg图形处理，SQLitx小型关系数据库，js解析引擎，移植层有GUI、FileSystom、Thread、Text等。</p>
+<p><strong>webkit的整个工作流程：</strong> </p>
+<p>当用户在浏览器输入网址，会把url传给CURL库，CURL负责发布http请求（webkit是排版引擎，网页数据的请求与接收是通过第三方库libcurl处理的，用到GET、POST、PUT、COOKIE的管理、http协议、https协议，本地文件缓存）。 </p>
+<h5 id="↓"><a href="#↓" class="headerlink" title="↓"></a>↓</h5><p>得到数据后，传给loader，开始解析，通过dom builder按HTML的规范生成Dom数。 </p>
+<h5 id="↓-1"><a href="#↓-1" class="headerlink" title="↓"></a>↓</h5><p>若有JavaScript，JSEnjine会完善dom数，生成dom树的同时，生成render树 </p>
+<h5 id="↓-2"><a href="#↓-2" class="headerlink" title="↓"></a>↓</h5><p>调用完成后，调用layout排版，并最终展示出来 </p>
+<p><strong>名词解释： </strong><br>Dom：HTML词/语法分析，Dom节点及Render节点创建，会形成Dom熟。</p>
+<p>浏览器核心分为两大部分：渲染引擎和Javascript引擎，前者用于处理页面布局，渲染及DOM结构，后者用于JavaScript的解析、执行及DOM交互。JavaScriptCore是一种JavaScript引擎，主要为webkit提供处理能力，safari使用的是这种内核。<br>为什么苹果在ios7以后引入了JavaScript，首先它脱离了浏览器外壳和繁重的ui布局，以及渲染的javascript引擎，可以将js更轻便和更高性能的带给原生应用，无论是移动端还是pc得浏览器，ui和gui都是最重要的性能瓶颈和优化点。</p>
+<h4 id="IOS与H5交互的方案，有以下几种："><a href="#IOS与H5交互的方案，有以下几种：" class="headerlink" title="IOS与H5交互的方案，有以下几种："></a>IOS与H5交互的方案，有以下几种：</h4><h5 id="1，使用UIWebView的代理"><a href="#1，使用UIWebView的代理" class="headerlink" title="1，使用UIWebView的代理"></a>1，使用UIWebView的代理</h5><p>js调用obc，需要利用webview的代理，拦截js的网络请求的url scheme与native进行交互，需要处理url及拦截后obc要做的功能。obc调用js，可以通过webview的stringByEvaluatingJavaScriptFromString方法调用js代码。</p>
+<h5 id="2，使用JavaScriptCore-framework"><a href="#2，使用JavaScriptCore-framework" class="headerlink" title="2，使用JavaScriptCore.framework"></a>2，使用JavaScriptCore.framework</h5><p>JavaScriptCore.framework是ios7以后推出的框架，它是开源Webkit的一个部分，是一种JavaScript引擎，可以提供脚本处理能力。苹果为我们推出了JavaScriptCore这个框架，为大家在与js交互上提供了很大帮助。JavaScriptCore框架中经常使用的类有：<br>JSContext，</p>
+<p>WebViewJavascriptBridge用于支持native的ios与JavaScript交互， </p>
+<pre><code>#import &quot;ViewController.h&quot;
+#import &lt;JavaScriptCore/JavaScriptCore.h&gt;
+
+@interface ViewController ()&lt;UIWebViewDelegate&gt;
+@property(nonatomic,strong)UIWebView * web;
+@property(nonatomic,strong)JSContext * context;
+@end
+
+@implementation ViewController
+
+- (void)viewDidLoad {
+[super viewDidLoad];
+// Do any additional setup after loading the view, typically from a nib.
+
+_web = [[UIWebView alloc] init];
+_web.delegate = self;
+
+}
+
+-(void)webViewDidFinishLoad:(UIWebView *)webView
+{
+// html中的调用
+//function JSCallOc1(){
+//  test1();
+//}
+//function JSCallOc2(){
+//  test2(&apos;带参&apos;,&apos;iOS&apos;);
+//}
+
+
+// 在html中的方法是
+//function htTest1(){
+//    alert(&quot;OC调用了无参数的js方法&quot;);
+//}
+//function htTest2(name,num){
+//    alert(name+num);
+//}
+
+
+// 1,获取js的上下文
+_context = [_web valueForKeyPath:@&quot;documentView.webView.mainFrame.javaScriptContext&quot;];
+
+// js调用原生代码，无参
+_context[@&quot;test&quot;] = ^(){
+    [self method1];
+};
+
+// js调用原生代码，有参
+_context[@&quot;test2&quot;] = ^(){
+    NSArray * args = [JSContext currentArguments];
+    NSString * arg1 = args[0];
+    [self method2:arg1];
+};
+
+// 原生调用js的方法,无参
+[_web stringByEvaluatingJavaScriptFromString:@&quot;htTest1()&quot;];
+// 原生调用js的方法,有参
+[_web stringByEvaluatingJavaScriptFromString:[NSString stringWithFormat:@&quot;htTest2(%@,%@)&quot;,@&quot;1&quot;,@&quot;2&quot;]];
+
+// 自己定义js调用
+NSString *alertJS=@&quot;alert(&apos;test‘)&quot;; //准备执行的js代码
+[_context evaluateScript:alertJS];
+}
+
+-(void)method1
+{
+
+}
+
+-(void)method2:(NSString *)arg
+{
+
+}
+</code></pre><h5 id="3，使用WebViewJavascriptBridge"><a href="#3，使用WebViewJavascriptBridge" class="headerlink" title="3，使用WebViewJavascriptBridge"></a>3，使用WebViewJavascriptBridge</h5><p>WebViewJavascriptBridge是Obj-C和JavaScript通过UIWebViews/WebViews互通消息的一个iOS/OSX的桥梁，它并没有直接代理来实现，而是这样：</p>
+<pre><code>- (void)viewWillAppear:(BOOL)animated {
+if (_bridge) { return; }
+
+UIWebView* webView = [[UIWebView alloc] initWithFrame:CGRectMake(0, 0, 320, 400)];
+[self.view addSubview:webView];
+//开启调试信息
+[WebViewJavascriptBridge enableLogging]; 
+
+//响应JS通过send发送给OC的消息
+_bridge = [WebViewJavascriptBridge bridgeForWebView:webView webViewDelegate:self handler:^(id data, WVJBResponseCallback responseCallback) {
+ NSLog(@&quot;ObjC received message from JS: %@&quot;, data);
+responseCallback(@&quot;Response for message from ObjC&quot;);
+}]; 
+
+//响应JS通过callhandler发送给OC的消息
+[_bridge registerHandler:@&quot;testObjcCallback&quot; handler:^(id data, WVJBResponseCallback responseCallback) {
+NSLog(@&quot;testObjcCallback called: %@&quot;, data);
+responseCallback(@&quot;Response from testObjcCallback&quot;);
+}];
+[self renderButtons:webView];
+[self loadExamplePage:webView];
+} 
+</code></pre><p>这个框架定义了两种OC与JS之间通信的方式，一种是send，发送一条消息，另一种是通过一个key调用callHandler，这两个方法接收js返回的data并显示，之后再调用responseCallback方法，回调js的代码。这是OC响应JS发来的消息。当然也可以OC主动给JS发消息。 </p>
+<pre><code>//OC调用send给JS发消息
+- (void)sendMessage:(id)sender {
+[_bridge send:@&quot;A string sent from ObjC to JS&quot; responseCallback:^(id response) {
+ NSLog(@&quot;sendMessage got response: %@&quot;, response);
+}];
+}
+//OC调用callHandler给JS发消息
+- (void)callHandler:(id)sender {
+ id data = @{ @&quot;greetingFromObjC&quot;: @&quot;Hi there, JS!&quot; };
+[_bridge callHandler:@&quot;testJavascriptHandler&quot; data:data responseCallback:^(id response) {
+ NSLog(@&quot;testJavascriptHandler responded: %@&quot;, response);
+}];
+</code></pre><p>其中在JS端，可以有多个handler，所以callHandler需要一个key来寻找指定方法。responseCallback用于响应JS处理完毕后对OC的回调。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/21/IOS中的切图规范及尺寸要求md/" rel="next" title="IOS中的切图规范及尺寸要求">
+                <i class="fa fa-chevron-left"></i> IOS中的切图规范及尺寸要求
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/10/15/符号化IOS崩溃日志，解读堆栈信息/" rel="prev" title="符号化IOS崩溃日志，解读堆栈信息">
+                符号化IOS崩溃日志，解读堆栈信息 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#UIWebView与Js的三种交互方式"><span class="nav-number">1.</span> <span class="nav-text">UIWebView与Js的三种交互方式</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#浏览器内核——WebKit"><span class="nav-number">1.0.1.</span> <span class="nav-text">浏览器内核——WebKit</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#↓"><span class="nav-number">1.0.2.</span> <span class="nav-text">↓</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#↓-1"><span class="nav-number">1.0.3.</span> <span class="nav-text">↓</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#↓-2"><span class="nav-number">1.0.4.</span> <span class="nav-text">↓</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#IOS与H5交互的方案，有以下几种："><span class="nav-number">1.1.</span> <span class="nav-text">IOS与H5交互的方案，有以下几种：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1，使用UIWebView的代理"><span class="nav-number">1.1.1.</span> <span class="nav-text">1，使用UIWebView的代理</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2，使用JavaScriptCore-framework"><span class="nav-number">1.1.2.</span> <span class="nav-text">2，使用JavaScriptCore.framework</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3，使用WebViewJavascriptBridge"><span class="nav-number">1.1.3.</span> <span class="nav-text">3，使用WebViewJavascriptBridge</span></a></li></ol></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

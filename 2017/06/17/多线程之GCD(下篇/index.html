@@ -1,0 +1,783 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="多线程中的——队列和任务队列分为串行和并行，对于队列来说，它只负责任务的调度，不负责任务的执行。串行队列：任务按照顺序调度，执行完前一个任务，下一个任务才会被调度。并行队列：只要有空闲的线程，当前任务就会被调度，交给线程去执行，而不用考虑前面的任务。   主队列：专门用来在主线程调度任务的队列，所以主队列的任务都要在主线程来执行，主队列随着程序的启动一起创建。全局队列：是为了方便程序开发提供的，与">
+<meta property="og:type" content="article">
+<meta property="og:title" content="符号化IOS崩溃日志，解读堆栈信息">
+<meta property="og:url" content="http://yoursite.com/2017/06/17/多线程之GCD(下篇/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="多线程中的——队列和任务队列分为串行和并行，对于队列来说，它只负责任务的调度，不负责任务的执行。串行队列：任务按照顺序调度，执行完前一个任务，下一个任务才会被调度。并行队列：只要有空闲的线程，当前任务就会被调度，交给线程去执行，而不用考虑前面的任务。   主队列：专门用来在主线程调度任务的队列，所以主队列的任务都要在主线程来执行，主队列随着程序的启动一起创建。全局队列：是为了方便程序开发提供的，与">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/%E4%B8%B2%E8%A1%8C%E9%98%9F%E5%88%97.jpg?raw=true">
+<meta property="og:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/%E5%B9%B6%E8%A1%8C%E9%98%9F%E5%88%97.jpg?raw=true">
+<meta property="og:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/dispatch_barrer.jpg?raw=true">
+<meta property="og:updated_time" content="2018-11-30T08:12:04.390Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="符号化IOS崩溃日志，解读堆栈信息">
+<meta name="twitter:description" content="多线程中的——队列和任务队列分为串行和并行，对于队列来说，它只负责任务的调度，不负责任务的执行。串行队列：任务按照顺序调度，执行完前一个任务，下一个任务才会被调度。并行队列：只要有空闲的线程，当前任务就会被调度，交给线程去执行，而不用考虑前面的任务。   主队列：专门用来在主线程调度任务的队列，所以主队列的任务都要在主线程来执行，主队列随着程序的启动一起创建。全局队列：是为了方便程序开发提供的，与">
+<meta name="twitter:image" content="https://github.com/artjing/BLOGIMAGE/blob/master/%E4%B8%B2%E8%A1%8C%E9%98%9F%E5%88%97.jpg?raw=true">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 符号化IOS崩溃日志，解读堆栈信息 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                符号化IOS崩溃日志，解读堆栈信息
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2017-06-17T21:17:23+08:00" content="2017-06-17">
+              2017-06-17
+            </time>
+          </span>
+
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h3 id="多线程中的——队列和任务"><a href="#多线程中的——队列和任务" class="headerlink" title="多线程中的——队列和任务"></a>多线程中的——队列和任务</h3><p>队列分为串行和并行，对于队列来说，它只负责任务的调度，不负责任务的执行。<br><strong>串行队列：</strong>任务按照顺序调度，执行完前一个任务，下一个任务才会被调度。<br><img src="https://github.com/artjing/BLOGIMAGE/blob/master/%E4%B8%B2%E8%A1%8C%E9%98%9F%E5%88%97.jpg?raw=true" alt=""><br><strong>并行队列：</strong>只要有空闲的线程，当前任务就会被调度，交给线程去执行，而不用考虑前面的任务。<br><img src="https://github.com/artjing/BLOGIMAGE/blob/master/%E5%B9%B6%E8%A1%8C%E9%98%9F%E5%88%97.jpg?raw=true" alt="">  </p>
+<p><strong>主队列：</strong>专门用来在主线程调度任务的队列，所以主队列的任务都要在主线程来执行，主队列随着程序的启动一起创建。<br><strong>全局队列：</strong>是为了方便程序开发提供的，与并发队列一样，区别只在于，在MRC下，并发队列需要我们手动释放。 </p>
+<p>任务的执行分为同步和异步<br><strong>同步：</strong>不会开启新的线程，任务按顺序执行<br><strong>异步：</strong>会开启新的线程，任务可以并发的执行。<br>当队列和任务组合在一起，就有下面四种组合：<br>串行队列同步执行、串行队列异步执行、并行队列同步执行、并行队列异步执行<br>对于前三种，由于串行是按照顺序执行，而同步不会开启新的线程，所以它们都是一个一个按照顺序执行的，只有并行异步是可以实现任务的并发，并且开启新的线程。</p>
+<h3 id="dispatch-sync造成的死锁"><a href="#dispatch-sync造成的死锁" class="headerlink" title="dispatch_sync造成的死锁"></a>dispatch_sync造成的死锁</h3><p>dispatch_sync就是将指定的block同步的追加到指定的Dispatch Queue中，在追加的Block结束之前，dispatch_sync会一直等待。源于这样的情况，dispatch_sync函数也特别容易引起死锁，例如下面三种情况都会造成死锁：</p>
+<pre><code>// 在主线程中执行指定的Block，并等待其执行结束。但在主线程中，正执行着这个代码，导致无法追加到dispatch_get_main_queue的Block，而造成死锁。
+
+dispatch_queue_t queue = dispatch_get_main_queue();
+dispatch_sync(queue, ^{
+    NSLog(@&quot;同步&quot;);
+});
+
+dispatch_async(queue, ^{
+    dispatch_sync(queue, ^{
+        NSLog(@&quot;同步&quot;);
+    });
+});
+
+dispatch_queue_t queue = dispatch_queue_create(&quot;com.dispatchQueue.forSynDispatch&quot;, NULL);
+dispatch_sync(queue, ^{
+    NSLog(@&quot;同步&quot;);
+});
+</code></pre><p>如果我们在控制器中添加了下面的两段代码，可以看到同步和异步的区别： </p>
+<pre><code>- (void)viewDidLoad
+{
+[super viewDidLoad];
+// 因为是同步任务，NSLog(@&quot;end&quot;)会一直等待前面的Block执行完再打印。
+dispatch_sync(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    NSLog(@&quot;blcok1&quot;);
+});
+    NSLog(@&quot;end&quot;);
+  }  
+
+ - (void)viewDidLoad
+{
+[super viewDidLoad];
+// 异步的认为，直接走下下面的打印，在全局队列中完成Block，不需要等待。
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    NSLog(@&quot;blcok1&quot;);
+});
+    NSLog(@&quot;end&quot;);
+}
+</code></pre><h3 id="选择使用dispatch-async"><a href="#选择使用dispatch-async" class="headerlink" title="选择使用dispatch_async"></a>选择使用dispatch_async</h3><p>何时可以考虑使用dispatch_async呢：<br>1，自定义串行队列，当我们想串行执行后台任务，并且跟踪它的完成时，使用dispatch_async是一个不错的选择，它可以消除资源竞争，每次该线程只有一个任务在执行。<br>2，主队列，当我们想执行完一个并发任务之后回到主线程更新UI，这是经常会用到的方法，它可以确保这个任务在在当前方法完成后的某个时间点执行。<br>3，并发任务，执行后台并发任务一般会选择。  </p>
+<h3 id="使用延迟提高用户体验"><a href="#使用延迟提高用户体验" class="headerlink" title="使用延迟提高用户体验"></a>使用延迟提高用户体验</h3><pre><code>- (void)showOrHideNavPrompt
+{
+// Implement me!
+NSInteger count = [[PhotoManager sharedManager] photos].count;
+double delayInsecond = 1.0;
+dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t) delayInsecond * NSEC_PER_SEC);
+dispatch_after(popTime, dispatch_get_main_queue(), ^{
+    if (!count) {
+        [self.navigationItem setPrompt:@&quot;先添加图片&quot;];
+    }else{
+        [self.navigationItem setPrompt:nil];
+    }
+});
+}
+</code></pre><h4 id="dispatch-barrier障碍函数"><a href="#dispatch-barrier障碍函数" class="headerlink" title="dispatch_barrier障碍函数"></a>dispatch_barrier障碍函数</h4><p>使用场景：当我们定义了几个并发队列，使用dispatch_barrier障碍函数可以确保它被提交的时间点上是队列上唯一被执行的条目，也就是先于它提交到队列的条目一定能在这个Block执行前完成。当障碍函数的Block执行完成后，再执行并发队列剩下的任务。  </p>
+<p><img src="https://github.com/artjing/BLOGIMAGE/blob/master/dispatch_barrer.jpg?raw=true" alt=""> </p>
+<h3 id="dispatch-once让单例线程安全"><a href="#dispatch-once让单例线程安全" class="headerlink" title="dispatch_once让单例线程安全"></a>dispatch_once让单例线程安全</h3><p>如果我们自己写了一个对象（比如一个MutableArray）的存取方法，它被多个控制器同时访问。我们想自控制它的竞态，你会怎么做呢？如果你使用if条件判断，实现起来可能稍微麻烦，而且不好控制它的临界区，导致最终我们取到的不是我们想要的结果。对于竞态的重要性，我们可以使用dispatch_once,以县城安全的方式执行且仅执行代码块一次。视图访问临界区的其它线程会被阻塞，直到临界区完成。</p>
+<h3 id="dispatch-group调度组"><a href="#dispatch-group调度组" class="headerlink" title="dispatch_group调度组"></a>dispatch_group调度组</h3><p>不管我们的任务是同步还是异步，也不管它们是不是在同一个队列，调度组会在整个任务完成后通知你，我们拿到这个通知进行下面的操作。例如下面的代码，是对原来的处理进行了优化：</p>
+<pre><code>- (void)downloadPhotosWithCompletionBlock:(BatchPhotoDownloadingCompletionBlock)completionBlock
+{
+__block NSError *error;
+
+dispatch_group_t downloadGroup = dispatch_group_create();
+
+for (NSInteger i = 0; i &lt; 3; i++) {
+    NSURL *url;
+    switch (i) {
+        case 0:
+            url = [NSURL URLWithString:kOverlyAttachedGirlfriendURLString];
+            break;
+        case 1:
+            url = [NSURL URLWithString:kSuccessKidURLString];
+            break;
+        case 2:
+            url = [NSURL URLWithString:kLotsOfFacesURLString];
+            break;
+        default:
+            break;
+    }
+
+    dispatch_group_enter(downloadGroup);
+    Photo *photo = [[Photo alloc] initwithURL:url
+                          withCompletionBlock:^(UIImage *image, NSError *_error) {
+                              if (_error) {
+                                  error = _error;
+                              }
+                              dispatch_group_leave(downloadGroup);
+                          }];
+
+    [[PhotoManager sharedManager] addPhoto:photo];
+}
+
+dispatch_group_notify(downloadGroup, dispatch_get_main_queue(), ^{
+    if (completionBlock) {
+        completionBlock(error);
+    }
+});
+}
+// 需要注意的是，dispatch_group_enter要跟dispatch_group_leave成对的出现。dispatch_group_enter表示我们手动的通知Dispatch Group任务已经开始，dispatch_group_notify是以异步的方式工作。
+</code></pre><h3 id="GCD的实现"><a href="#GCD的实现" class="headerlink" title="GCD的实现"></a>GCD的实现</h3><p>GCD是内核级的（即IOS和OSX的核心是XUN内核），它是基于XUN内核实现的，它的API全部在libdispatch库中。GCD的底层实现主要有Dispatch Queue（用于管理block操作），和Dispatch source（用于处理事件）。</p>
+<p>GCD有一个底层线程池，线程中存放着一个个线程，并且这些线程是可以重用的，如果一段时间后这个线程没有被调用，线程就会被销毁。开多少线程是由线程池决定的，不需要我们维护（一般建议线程控制在3-5条）。我们关心的是向队列中添加任务，队列调度即可。<br>如果队列中存放的是异步的任务，当任务出队后，线程池会提供一个线程任务执行，因为是异步执行，队列中的任务不需等待当前任务执行完毕就可以调度下一个任务，这时候，线程池会再次提供一个线程执行第二个任务，执行完再回到底层线程池中。这样就对此线程完成一个服用，而不需要没一个任务执行都开启新的额线程，节约了开销。  </p>
+<h4 id="GCD与NSOperationQueue的区别："><a href="#GCD与NSOperationQueue的区别：" class="headerlink" title="GCD与NSOperationQueue的区别："></a>GCD与NSOperationQueue的区别：</h4><p>1，GCD是纯c语言的API，NSOperationQueue是基于GCD的OC版本的封装。<br>2，GCD只支持FIFO的队列，NSOperationQueue可以自己调整执行顺序，可以设置最大并发数量。<br>3，NSOperationQueue支持KVO，可以检测operation是否正在执行，是否结束，是否取消。<br>4，GCD的执行速度比NSOperationQueue快。</p>
+<pre><code>- (void)viewDidLoad
+{
+  [super viewDidLoad];
+
+// 原来的方法
+// UIImage *overlayImage = [self faceOverlayImageFromImage:_image];
+//[self fadeInNewImage:overlayImage];
+
+// 优化后：viewDidLoad在主线程执行，下面将绘图工作从主线程移到全局队列，Block会被异步的提交，使得viewDidLoad更早的在主线程完成，加载过程感觉起来更快，如果我们加载的是一个超大的图像，应用就不会再加载视图控制上“挂住”。
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+    UIImage *overlayImage = [self faceOverlayImageFromImage:_image];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self fadeInNewImage:overlayImage];
+    });
+});
+}
+</code></pre><h4 id="如何选择"><a href="#如何选择" class="headerlink" title="如何选择"></a>如何选择</h4><p>当任务之间有依赖关系或者需要监听任务的执行情况，就选择NSOperationQueue。使用GCD要比使用NSTread这些一般的多线程编程API更好。</p>
+<p>Dispatch Queue通过结构体和链表，被实现为FIFO队列，FIFO队列管理是通过dispatch_aync等函数所追加的Block，Block并不是直接加入FIFO队列，而是先加入Dispatch_continuation这一类型结构体中，然后再加入FIFO队列。该Dispatch_continuation用于记忆Block所属的Dispatch Group和其它一些信息，相当于一般常说的执行上下文。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/30/shell打包脚本解读/" rel="next" title="shell自动打包脚本解读">
+                <i class="fa fa-chevron-left"></i> shell自动打包脚本解读
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#多线程中的——队列和任务"><span class="nav-number">1.</span> <span class="nav-text">多线程中的——队列和任务</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-sync造成的死锁"><span class="nav-number">2.</span> <span class="nav-text">dispatch_sync造成的死锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#选择使用dispatch-async"><span class="nav-number">3.</span> <span class="nav-text">选择使用dispatch_async</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用延迟提高用户体验"><span class="nav-number">4.</span> <span class="nav-text">使用延迟提高用户体验</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#dispatch-barrier障碍函数"><span class="nav-number">4.1.</span> <span class="nav-text">dispatch_barrier障碍函数</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-once让单例线程安全"><span class="nav-number">5.</span> <span class="nav-text">dispatch_once让单例线程安全</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-group调度组"><span class="nav-number">6.</span> <span class="nav-text">dispatch_group调度组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD的实现"><span class="nav-number">7.</span> <span class="nav-text">GCD的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#GCD与NSOperationQueue的区别："><span class="nav-number">7.1.</span> <span class="nav-text">GCD与NSOperationQueue的区别：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#如何选择"><span class="nav-number">7.2.</span> <span class="nav-text">如何选择</span></a></li></ol></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

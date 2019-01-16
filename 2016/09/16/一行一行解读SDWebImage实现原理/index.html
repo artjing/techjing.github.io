@@ -1,0 +1,986 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="一行一行解读SDWebImage实现原理SDImageCache是怎么做数据管理的：SDImageCache分两个部分，一个是内存层面的，一个是硬件层面的。内存层面相当是缓存器，以键值的形式存储图片，当内存不够的时候会清除所有的缓存图片。文件替换的方式是以时间为单位，删除时间大于一周的图片文件。当当SDWebImageManager向SDImageCache要资源时，先搜索内存层面的数据，如果有就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一行一行解读SDWebImage实现原理">
+<meta property="og:url" content="http://yoursite.com/2016/09/16/一行一行解读SDWebImage实现原理/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="一行一行解读SDWebImage实现原理SDImageCache是怎么做数据管理的：SDImageCache分两个部分，一个是内存层面的，一个是硬件层面的。内存层面相当是缓存器，以键值的形式存储图片，当内存不够的时候会清除所有的缓存图片。文件替换的方式是以时间为单位，删除时间大于一周的图片文件。当当SDWebImageManager向SDImageCache要资源时，先搜索内存层面的数据，如果有就">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2016-10-30T13:24:47.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="一行一行解读SDWebImage实现原理">
+<meta name="twitter:description" content="一行一行解读SDWebImage实现原理SDImageCache是怎么做数据管理的：SDImageCache分两个部分，一个是内存层面的，一个是硬件层面的。内存层面相当是缓存器，以键值的形式存储图片，当内存不够的时候会清除所有的缓存图片。文件替换的方式是以时间为单位，删除时间大于一周的图片文件。当当SDWebImageManager向SDImageCache要资源时，先搜索内存层面的数据，如果有就">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 一行一行解读SDWebImage实现原理 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                一行一行解读SDWebImage实现原理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-09-16T23:00:25+08:00" content="2016-09-16">
+              2016-09-16
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="一行一行解读SDWebImage实现原理"><a href="#一行一行解读SDWebImage实现原理" class="headerlink" title="一行一行解读SDWebImage实现原理"></a>一行一行解读SDWebImage实现原理</h1><h3 id="SDImageCache是怎么做数据管理的："><a href="#SDImageCache是怎么做数据管理的：" class="headerlink" title="SDImageCache是怎么做数据管理的："></a>SDImageCache是怎么做数据管理的：</h3><p>SDImageCache分两个部分，一个是内存层面的，一个是硬件层面的。<br>内存层面相当是缓存器，以键值的形式存储图片，当内存不够的时候会清除所有的缓存图片。文件替换的方式是以时间为单位，删除时间大于一周的图片文件。当当SDWebImageManager向SDImageCache要资源时，先搜索内存层面的数据，如果有就直接返回，没有的话去访问硬盘，将图片从磁盘读出来，然后解码，放在内存层面做备份，再给调用层。</p>
+<p>由于UIImage的imageWithData函数是每次画图的时候才将Data解压成ARGB的图像，<br>所以在每次画图的时候，会有一个解压操作，这样效率很低，但是只有瞬时的内存需求。<br>为了提高效率通过SDWebImageDecoder将包装在Data下的资源解压，然后画在另外一张图片上，这样这张新图片就不再需要重复解压了。</p>
+<h3 id="SDWebImage-加载图片的流程："><a href="#SDWebImage-加载图片的流程：" class="headerlink" title="SDWebImage 加载图片的流程："></a>SDWebImage 加载图片的流程：</h3><p>占位图-&gt;根据url查找缓存queryDiskCacheForKey-&gt;从硬盘缓存目录下尝试读取图片文件，读取到添加到内存缓存中，回主线程进行操作。如果没有读取到，说明所有的缓存都不存在该图片。-&gt;图片下载由 NSURLConnection,实现其代理方法，connection:didReceiveData: 中利用ImageIO做了按图片下载进度。-&gt;数据下载完成后交给 SDWebImageDecoder做图片解码处理-&gt;解码完成，图片保存到SDImageCache中，内存缓存和硬盘缓存同时保存。-&gt;在收到内存警告时清楚图片缓存，以及在关闭应用时，请出过期图片。</p>
+<h3 id="具体流程解析："><a href="#具体流程解析：" class="headerlink" title="具体流程解析："></a>具体流程解析：</h3><p>1，UIImageView+WebCache:  setImageWithURL:placeholderImage:options: 先显示 placeholderImage ，同时由SDWebImageManager 根据 URL来在本地查找图片。</p>
+<p>2，SDWebImageManager: downloadWithURL:delegate:options:userInfo: SDWebImageManager是将UIImageView+WebCache同SDImageCache链接起来的类， SDImageCache： queryDiskCacheForKey:delegate:userInfo:用来从缓存根据CacheKey查找图片是否已经在缓存中，如果内存中已经有图片缓存， SDWebImageManager会回调SDImageCacheDelegate:imageCache:didFindImage:forKey:userInfo:，而UIImageView+WebCache 则回调SDWebImageManagerDelegate:  webImageManager:didFinishWithImage:来显示图片。如果内存中没有图片缓存，那么生成 NSInvocationOperation 添加到队列，从硬盘查找图片是否已被下载缓存。</p>
+<p>3，根据 URLKey 在硬盘缓存目录下尝试读取图片文件。这一步是在 NSOperation 进行的操作，所以回主线程进行结果回调 notifyDelegate:。如果上一操作从硬盘读取到了图片，将图片添加到内存缓存中（如果空闲内存过小，会先清空内存缓存）。SDImageCacheDelegate 回调 imageCache:didFindImage:forKey:userInfo:。进而回调展示图片。</p>
+<p>4，如果从硬盘缓存目录读取不到图片，说明所有缓存都不存在该图片，需要下载图片，回调 imageCache:didNotFindImageForKey:userInfo:。共享或重新生成一个下载器 SDWebImageDownloader 开始下载图片。图片下载由 NSURLConnection 来做，实现相关 delegate 来判断图片下载中、下载完成和下载失败。connection:didReceiveData: 中利用 ImageIO 做了按图片下载进度加载效果。</p>
+<p>5,connectionDidFinishLoading: 数据下载完成后交给 SDWebImageDecoder做图片解码处理。图片解码处理在一个 NSOperationQueue 完成，不会拖慢主线程 UI。如果有需要对下载的图片进行二次处理，最好也在这里完成，效率会好很多。</p>
+<p>6,在主线程 notifyDelegateOnMainThreadWithInfo: 宣告解码完成，imageDecoder:didFinishDecodingImage:userInfo: 回调给SDWebImageDownloader。<br>imageDownloader:didFinishWithImage: 回调给 SDWebImageManager 告知图片下载完成。<br>通知所有的 downloadDelegates 下载完成，回调给需要的地方展示图片。</p>
+<p>7,将图片保存到 SDImageCache 中，内存缓存和硬盘缓存同时保存。<br>写文件到硬盘在单独 NSInvocationOperation 中完成，避免拖慢主线程。</p>
+<p>8,如果是在iOS上运行，SDImageCache 在初始化的时候会注册notification 到 UIApplicationDidReceiveMemoryWarningNotification 以及  UIApplicationWillTerminateNotification,在内存警告的时候清理内存图片缓存，应用结束的时候清理过期图片。<br>SDWebImagePrefetcher 可以预先下载图片，方便后续使用。<br>通过对UIImageView的类别扩展来实现异步加载替换图片的工作。</p>
+<p>主要用到的对象：<br>1、UIImageView (WebCache)类别，入口封装，实现读取图片完成后的回调。 </p>
+<p>2、SDWebImageManager，对图片进行管理的中转站，记录那些图片正在读取。 </p>
+<p>向下层读取Cache（调用SDImageCache），或者向网络读取对象（调用SDWebImageDownloader 。<br>实现SDImageCache和SDWebImageDownloader的回调。 </p>
+<p>3、SDImageCache，根据URL的MD5摘要对图片进行存储和读取（实现存在内存中或者存在硬盘上两种实现）<br>实现图片和内存清理工作。 </p>
+<p>4、SDWebImageDownloader，根据URL向网络读取数据（实现部分读取和全部读取后再通知回调两种方式）</p>
+<p>其他类：<br>SDWebImageDecoder，异步对图像进行了一次解压⋯⋯</p>
+<h5 id="图片的缓存类型："><a href="#图片的缓存类型：" class="headerlink" title="图片的缓存类型："></a>图片的缓存类型：</h5><pre><code>typedef NS_ENUM(NSInteger, SDImageCacheType) {
+/**
+ * The image wasn&apos;t available the SDWebImage caches, but was downloaded from the web.
+ 该图像是不可用的SDWebImage缓存，但是从网络下载的.
+ */
+SDImageCacheTypeNone,
+/**
+ * The image was obtained from the disk cache.
+ 图像从磁盘高速缓存获得.
+ */
+SDImageCacheTypeDisk,
+/**
+ * The image was obtained from the memory cache.
+ 图像从存储器高速缓存获得
+ */
+SDImageCacheTypeMemory
+};
+</code></pre><p>可以直接传入一个NSURL的图片路径对象对图片进行加载，若加载不为空则把图片缓存放入图片管理器单例保存起来，下一次再调用这个方式时会判断URL是否存在去读缓存。</p>
+<h2 id="一步一步解析源码（一）"><a href="#一步一步解析源码（一）" class="headerlink" title="一步一步解析源码（一）"></a>一步一步解析源码（一）</h2><h4 id="加载图片的过程："><a href="#加载图片的过程：" class="headerlink" title="加载图片的过程："></a>加载图片的过程：</h4><pre><code>- (void)setImageWithURL:(NSURL *)url refreshCache:(BOOL)refreshCache placeholderImage:(UIImage *)placeholder
+{
+
+// Remove in progress downloader from queue
+
+self.image = placeholder;
+
+if (url)
+{
+    if ([[CustomObject sharedCustomObject] isExistImage:url]) {
+        NSLog(@&quot;存在图片&quot;);
+        self.image = [[CustomObject sharedCustomObject]getImage:url];
+    }
+    else{
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSData * data = [[NSData alloc]initWithContentsOfURL:url];
+            UIImage *image = [[UIImage alloc]initWithData:data];
+            if (data != nil) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [[CustomObject sharedCustomObject] addImage:image key:url];
+                    self.image = image;
+                });
+            }
+        });
+    }
+}
+}
+</code></pre><h4 id="核心算法：sd-setImageWithURL"><a href="#核心算法：sd-setImageWithURL" class="headerlink" title="核心算法：sd_setImageWithURL"></a>核心算法：sd_setImageWithURL</h4><p><strong>1，</strong>我们最常用的sd_setImageWithURL这个方法，最终都会调用：- sd_setImageWithURL: placeholderImage: options: progress: completed:这个核心算法。现在跟一下这个算法的内部实现：首先执行：</p>
+<pre><code>[self sd_cancelCurrentImageLoad];// 移除UIImageview当前绑定的操作，比如当cell被重用时，先执行这行代码，保证它的下载和缓存操作都被取消。
+</code></pre><p>它内部的执行是：</p>
+<pre><code>- (void)sd_cancelCurrentImageLoad {
+[self sd_cancelImageLoadOperationWithKey:@&quot;UIImageViewImageLoad&quot;];
+}
+//会调用UIView+WebCacheOperation的
+- (void)sd_cancelImageLoadOperationWithKey:(NSString *)key
+</code></pre><p><strong>2，</strong>然后看UIView+WebCacheOperation的内部实现</p>
+<p>它提供了三个方法用于操作绑定关系，</p>
+<pre><code>@interface UIView (WebCacheOperation)
+
+/**
+ *  Set the image load operation (storage in a UIView based dictionary)
+  *
+  *  @param operation the operation
+  *  @param key       key for storing the operation
+  */
+ - (void)sd_setImageLoadOperation:(id)operation forKey:(NSString *)key;
+
+ /**
+  *  Cancel all operations for the current UIView and key
+  *
+  *  @param key key for identifying the operations
+  */
+ - (void)sd_cancelImageLoadOperationWithKey:(NSString *)key;
+
+ /**
+  *  Just remove the operations corresponding to the current UIView and key without cancelling them
+  *
+  *  @param key key for identifying the operations
+  */
+ - (void)sd_removeImageLoadOperationWithKey:(NSString *)key;
+</code></pre><p>-(NSMutableDictionary *)operationDictionary用到了&lt;objc/runtime.h&gt;中定义的两个函数:<br>objc_setAssociatedObject和objc_getAssociatedObject</p>
+<pre><code>NSObject+AssociatedObject.m
+@implementation NSObject (AssociatedObject)
+@dynamic associatedObject;
+-(void)setAssociatedObject:(id)object{
+objc_setAssociatedObject(self, @selector(associatedObject), object,     OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+-(id)associatedObject { 
+return objc_getAssociatedObject(self, @selector(associatedObject));
+}
+</code></pre><p>objc_setAssociatedObject是对已经存在的类在扩展中添加自定义的属性，添加属性的key最好是static char类型的，key应该是唯一的。objc_getAssociatedObject可以根据key获得与对象绑定的属性。这个loadOperationKey的属性是operationDictionary类型的，operationDictionary的value是操作，key是针对不同类型和不同类型的操作设定的字符串。&amp;符号是右操作对象的地址，&amp;operationDictionary返回static char loadOperation的地址。</p>
+<pre><code>NSMutableDictionary *operations = objc_getAssociatedObject(self, &amp;loadOperationKey);
+if (operations) {
+    return operations;
+}
+</code></pre><p>下面是取消操作的实现，如果可以取到operationDictionary，根据key可以得到与视图相关的操作，取消它们，并根据key值，从operationDictionary里面删除这些操作。</p>
+<pre><code>- (void)sd_cancelImageLoadOperationWithKey:(NSString *)key {
+// Cancel in progress downloader from queue
+NSMutableDictionary *operationDictionary = [self operationDictionary];
+id operations = [operationDictionary objectForKey:key];
+if (operations) {
+    if ([operations isKindOfClass:[NSArray class]]) {
+        for (id &lt;SDWebImageOperation&gt; operation in operations) {
+            if (operation) {
+                [operation cancel];
+            }
+        }
+    } else if ([operations conformsToProtocol:@protocol(SDWebImageOperation)]){
+        [(id&lt;SDWebImageOperation&gt;) operations cancel];
+    }
+    [operationDictionary removeObjectForKey:key];
+}
+</code></pre><p>}</p>
+<p><strong>3，</strong>继续分析开始的核心算法-sd_setImageWithURL: placeholderImage: options: progress: completed</p>
+<pre><code>- (void)sd_setImageWithURL:(NSURL *)url
+      placeholderImage:(UIImage *)placeholder
+               options:(SDWebImageOptions)options
+              progress:(SDWebImageDownloaderProgressBlock)progressBlock 
+completed:(SDWebImageCompletionBlock)completedBlock {
+[self sd_cancelCurrentImageLoad];
+
+//用static char imageURLKey作key，将url作为属性绑定到ImageView上
+objc_setAssociatedObject(self, &amp;imageURLKey, url, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+//options &amp; SDWebImageDelayPlaceholder这是一个位运算的与操作,!(options &amp; SDWebImageDelayPlaceholder)的意思就是options参数不是SDWebImageDelayPlaceholder,就执行以下操作   
+
+#define dispatch_main_async_safe(block)\
+if ([NSThread isMainThread]) {\
+    block();\
+} else {\
+    dispatch_async(dispatch_get_main_queue(), block);\
+}
+</code></pre><p>这是一个宏定义,因为<strong>图像的绘制只能在主线程完成</strong>,所以dispatch_main_sync_safe就是为了保证block在主线程中执行</p>
+<pre><code> if (!(options &amp; SDWebImageDelayPlaceholder)) {
+    dispatch_main_async_safe(^{
+//设置imageView的placeHolder
+        self.image = placeholder;
+    });
+}
+
+if (url) {
+
+    // 检查是否通过setShowActivityIndicatorView:方法设置了显示正在加载指示器。如果设置了，使用`addActivityIndicator`方法向self添加指示器
+    if ([self showActivityIndicatorView]) {
+        [self addActivityIndicator];
+    }
+
+    __weak __typeof(self)wself = self;
+
+//下载的核心方法
+
+    id &lt;SDWebImageOperation&gt; operation = [SDWebImageManager.sharedManager downloadImageWithURL:url options:options 
+progress:progressBlock completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, BOOL finished, NSURL *imageURL) {
+      //移除加载指示器
+        [wself removeActivityIndicator];
+      //如果imageView不存在了就return停止操作
+        if (!wself) return;
+        dispatch_main_sync_safe(^{
+            if (!wself) return;
+</code></pre><p>SDWebImageAvoidAutoSetImage,默认情况下图片会在下载完毕后自动添加给imageView,但是有些时候我们想在设置图片之前加一些图片的处理,就要下载成功后去手动设置图片了,不会执行<code>wself.image = image;</code>,而是直接执行完成回调，有用户自己决定如何处理。</p>
+<pre><code>if (image &amp;&amp; (options &amp; SDWebImageAvoidAutoSetImage) &amp;&amp; completedBlock)
+{
+    completedBlock(image, error, cacheType, url);
+    return;
+}
+</code></pre><p>如果后两个条件中至少有一个不满足，那么就直接将image赋给当前的imageView<br>，并调用setNeedsLayout</p>
+<pre><code>else if (image) {
+    wself.image = image;
+    [wself setNeedsLayout];
+} else {
+</code></pre><p>image为空，并且设置了延迟设置占位图，会将占位图设置为最终的image，，并将其标记为需要重新布局。</p>
+<pre><code>                if ((options &amp; SDWebImageDelayPlaceholder)) {
+                    wself.image = placeholder;
+                    [wself setNeedsLayout];
+                }
+            }
+            if (completedBlock &amp;&amp; finished) {
+                completedBlock(image, error, cacheType, url);
+            }
+        });
+    }];
+ // 为UIImageView绑定新的操作,以为之前把ImageView的操作cancel了
+    [self sd_setImageLoadOperation:operation forKey:@&quot;UIImageViewImageLoad&quot;];
+} else {
+ // 判断url不存在，移除加载指示器，执行完成回调，传递错误信息。
+    dispatch_main_async_safe(^{
+        [self removeActivityIndicator];
+        if (completedBlock) {
+            NSError *error = [NSError errorWithDomain:SDWebImageErrorDomain code:-1 userInfo:@{NSLocalizedDescriptionKey : @&quot;Trying to load a nil url&quot;}];
+            completedBlock(nil, error, SDImageCacheTypeNone, url);
+        }
+    });
+}
+}
+</code></pre><p><strong>4，</strong>SDWenImageManager<br>-sd_setImageWithURL:forState:placeholderImage:options:completed:中,下载图片方法是位于SDWebImageManager类中- downloadImageWithURL: options:progress:completed:。<br>SDWenImageManager的作用,其实UIImageVIew+WebCache这个Category背后执行操作的就是这个SDWebImageManager.它会绑定一个下载器也就是SDwebImageDownloader和一个缓存SDImageCache</p>
+<pre><code>第一个参数是必须的,就是image的url
+第二个参数options你可以定制化各种各样的操作
+第三个参数是一个回调block,用于图片下载过程中的回调
+第四个参数是一个下载完成的回调,会在图片下载完成后回调
+返回值是一个NSObject类,并且这个NSObject类是遵循一个协议这个协议叫SDWebImageOperation,这个协议里面只写了一个协议,就是一个cancel一个operation的协议/**
+ *  Downloads the image at the given URL if not present in cache or return the cached version otherwise.
+ *
+ *  @deprecated This method has been deprecated. Use `downloadImageWithURL:options:progress:completed:`
+ */
+- (id &lt;SDWebImageOperation&gt;)downloadWithURL:(NSURL *)url
+                                options:(SDWebImageOptions)options
+                               progress:(SDWebImageDownloaderProgressBlock)progressBlock
+                              completed:(SDWebImageCompletedWithFinishedBlock)completedBlock __deprecated_msg(&quot;Method deprecated. Use `downloadImageWithURL:options:progress:completed:`&quot;);
+</code></pre><p><strong>5，缓存策略-SDWebImageOptions</strong></p>
+<p>  默认是开启了硬盘\内存缓存的</p>
+<ul>
+<li><p>SDWebImageRetryFailed   下载失败了会再次尝试下载</p>
+</li>
+<li><p>SDWebImageLowPriority   当UIScrollView等正在滚动时，延迟下载图片（放置scrollView滚动卡）</p>
+</li>
+<li><p>SDWebImageCacheMemoryOnly 只缓存到内存中，不缓存到硬盘上</p>
+</li>
+<li><p>SDWebImageProgressiveDownload 图片会一点一点慢慢显示出来（就像浏览器显示网页上的图片一样）</p>
+</li>
+<li><p>SDWebImageRefreshCached 将硬盘缓存交给系统自带的NSURLCache去处理，当同一个URL对应的图片经常更改时可以用这种策略</p>
+</li>
+<li><p>NSURLCache自带的cache机制，每次都要把缓存的row data再转化为UIImage，带来了数据处理和内存方面的更多操作。<br><strong>6，查询缓存和硬盘中是否有图片</strong></p>
+<ul>
+<li><p>(BOOL)cachedImageExistsForURL:(NSURL *)url {</p>
+<p>//调用上面的方法取到image的url对应的key<br>NSString *key = [self cacheKeyForURL:url];</p>
+<p>//首先检测内存缓存中时候存在这张图片,如果已有直接返回yes<br> if ([self.imageCache imageFromMemoryCacheForKey:key] != nil) return YES;</p>
+<p>//如果内存缓存里面没有这张图片,那么就调用diskImageExistsWithKey这个方法去硬盘找<br>return [self.imageCache diskImageExistsWithKey:key];<br>}</p>
+<p>// 检测硬盘里是否缓存了图片</p>
+</li>
+<li><p>(BOOL)diskImageExistsForURL:(NSURL <em>)url {<br>NSString </em>key = [self cacheKeyForURL:url];<br>return [self.imageCache diskImageExistsWithKey:key];<br>}<br><strong>7，SDWebImageManager的核心算法</strong></p>
+</li>
+<li><p>(id <sdwebimageoperation>)downloadImageWithURL:(NSURL *)url</sdwebimageoperation></p>
+<pre><code>  options:(SDWebImageOptions)options
+ progress:(SDWebImageDownloaderProgressBlock)progressBlock
+completed:(SDWebImageCompletionWithFinishedBlock)completedBlock {
+</code></pre><p><strong>block SDWebImageCombinedOperation *operation = [SDWebImageCombinedOperation new];
+</strong>weak SDWebImageCombinedOperation *weakOperation = operation;</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>上面，block声明的同时，会把取得block所使用的全部自动变量的值，这些值在block中只有“使用权”而没有“修改权”。–block用于指明当前声明的变量在被block捕获之后，可以再block中改变变量的值，<strong>block提供了变量的修改权，但是它不能避免循环引用，需要我们在block内部要退出的时候手动释放变量。
+</strong>weak是所有权修饰符，<strong>weak可以避免循环引用的问题，但是其会导致外部对象释放只会，block内部也访问不到对象的问题，我们可以通过在block内部声明一个</strong>strong来只想weakObj，使它在block内部能够保持，又能避免循环引用。</p>
+<pre><code>@synchronized (self.runningOperations) {
+    [self.runningOperations removeObject:operation];
+}
+</code></pre><p>@synchronized是OC中一种方便地创建互斥锁的方式–它可以防止不同线程在同一时间执行区块的代码<br>self.failedURLs是一个NSSet类型的集合,里面存放的都是下载失败的图片的url,failedURLs不是NSArray类型的原因是:<br>在搜索一个个元素的时候NSSet比NSArray效率高,主要是它用到了一个算法hash(散列,哈希) ,比如你要存储A,一个hash算法直接就能找到A应该存储的位置;同样当你要访问A的时候,一个hash过程就能找到A存储的位置,对于NSArray,若想知道A到底在不在数组中,则需要遍历整个数据,显然效率较低了<br>并且NSSet里面不含有重复的元素,同一个下载失败的url只会存在一个</p>
+<pre><code>BOOL isFailedUrl = NO;
+//创建一个互斥锁防止现有的别的线程修改failedURLs
+//判断这个url是否是fail过的,如果url failed过的那么isFailedUrl就是true. 
+@synchronized (self.failedURLs) {
+    isFailedUrl = [self.failedURLs containsObject:url];
+}
+
+//如果url不存在那么直接返回一个block,如果url存在那么继续
+//!(options &amp; SDWebImageRetryFailed) 之前就提过一个类似的了,它的意思看这个options是不是和SDWebImageRetryFailed不相同
+//如果不相同并且isFailedUrl是true.那么就回调一个error的block
+if (url.absoluteString.length == 0 || (!(options &amp; SDWebImageRetryFailed) &amp;&amp; isFailedUrl)) {
+    dispatch_main_sync_safe(^{
+        NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorFileDoesNotExist userInfo:nil];
+        completedBlock(nil, error, SDImageCacheTypeNone, YES, url);
+    });
+    return operation;
+}
+</code></pre><p>总结：- sd_setImageWithURL: placeholderImage: options: progress: completed:这个核心算法完成了这些工作：<br>1，创建了一个组合operation，是一个SDWebImageCombinedOperation对象，这个对象负责下载operation创建和管理同时又缓存功能，是对下载和缓存两个过程的组合。<br>2，先去内存缓存和磁盘中寻找这张图片，这两个功能在imagecache的queryDiskCacheForKey：done：方法中完成，这个方法的返回值即是一个缓存operation，赋值给上面方法operation的cacheOperation属性。在查找缓存的完成回调中，它会根据是否设置了SDWebImageRefreshCached选择和代理是否支持下载决定是否要下载（重点），并对下载过程中遇到的NSURLCache的情况做处理，有下载失败的处理以及下载之后进行缓存，然后查看是否设置了形变选项并调用代理的形变方法进行对图片形变处理。</p>
+<h2 id="一步一步解析源码（二）SDWebImageDownloader"><a href="#一步一步解析源码（二）SDWebImageDownloader" class="headerlink" title="一步一步解析源码（二）SDWebImageDownloader"></a>一步一步解析源码（二）SDWebImageDownloader</h2><p>SDWebImageManager中实现下载，是调用下面这个方法。- (id<sdwebimageoperation>)downloadImageWithURL:(NSURL *)url。</sdwebimageoperation></p>
+<p>在头文件中，SDWebImageDownloaderOptions的选项主要涉及到下载的优先级，缓存，后台任务执行，cookie处理及证书认证几个方面，在下载操作的时候可以使用组合的选项来完成一些特殊的需求。</p>
+<p>先是定义两个常量，后面通知的时候用。</p>
+<pre><code>extern NSString *const SDWebImageDownloadStartNotification;
+extern NSString *const SDWebImageDownloadStopNotification;
+</code></pre><p>全局变量：const NSString * str = @“”; 外部也可以访问。</p>
+<p>局部变量：static const NSString * str = @“”;只能文件内访问，外部不能访问。</p>
+<p>然后是定义了三个block。</p>
+<p>接下来看核心的算法downloadImageWithURL：</p>
+<pre><code>  - (id &lt;SDWebImageOperation&gt;)downloadImageWithURL:(NSURL *)url options:(SDWebImageDownloaderOptions)options progress:(SDWebImageDownloaderProgressBlock)progressBlock completed:(SDWebImageDownloaderCompletedBlock)completedBlock {
+__block SDWebImageDownloaderOperation *operation;
+__weak SDWebImageDownloader *wself = self;
+
+[self addProgressCallback:progressBlock andCompletedBlock:completedBlock forURL:url createCallback:^{
+    NSTimeInterval timeoutInterval = wself.downloadTimeout;
+    if (timeoutInterval == 0.0) {
+        timeoutInterval = 15.0;
+    }
+</code></pre><p>这个addProgressCallback：</p>
+<pre><code>dispatch_barrier_sync(self.barrierQueue, ^{
+BOOL first = NO;
+if (!self.URLCallbacks[url]) {
+    self.URLCallbacks[url] = [NSMutableArray new];
+    first = YES;
+}
+</code></pre><p>这里用到了Dispatch Barrier解决多线程并发读写一个资源发生死锁。dispatch_barrier_sync此函数会等待队列中现有的任务行知完，再执行现有的任务，并且在此方法后添加的任务必须等此任务执行完才能执行。来控制执行顺序。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/20/重构：利用objction实现组件化开发/" rel="next" title="重构：利用objction实现组件化开发">
+                <i class="fa fa-chevron-left"></i> 重构：利用objction实现组件化开发
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/09/20/IOS应用的生命周期、Tableview的生命周期及优化整理/" rel="prev" title="IOS生命周期、Tableview生命周期及优化方案">
+                IOS生命周期、Tableview生命周期及优化方案 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#一行一行解读SDWebImage实现原理"><span class="nav-number">1.</span> <span class="nav-text">一行一行解读SDWebImage实现原理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SDImageCache是怎么做数据管理的："><span class="nav-number">1.0.1.</span> <span class="nav-text">SDImageCache是怎么做数据管理的：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImage-加载图片的流程："><span class="nav-number">1.0.2.</span> <span class="nav-text">SDWebImage 加载图片的流程：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#具体流程解析："><span class="nav-number">1.0.3.</span> <span class="nav-text">具体流程解析：</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#图片的缓存类型："><span class="nav-number">1.0.3.0.1.</span> <span class="nav-text">图片的缓存类型：</span></a></li></ol></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#一步一步解析源码（一）"><span class="nav-number">1.1.</span> <span class="nav-text">一步一步解析源码（一）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#加载图片的过程："><span class="nav-number">1.1.0.1.</span> <span class="nav-text">加载图片的过程：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#核心算法：sd-setImageWithURL"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">核心算法：sd_setImageWithURL</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#一步一步解析源码（二）SDWebImageDownloader"><span class="nav-number">1.2.</span> <span class="nav-text">一步一步解析源码（二）SDWebImageDownloader</span></a></li></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

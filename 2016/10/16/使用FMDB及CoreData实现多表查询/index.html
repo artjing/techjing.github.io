@@ -1,0 +1,890 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="使用FMDB及CoreData实现多表查询一、CoreData二零一四年做过一个电子书城的项目，由于数据模型不是特别复杂，最终选择使用CoreData来做本地电子书的数据管理。实现的思路是：在程序中定义了一个数据库相关的manager类，它提供一个单例，用来共享数据操作上下文NSManagedObjectContext，还有一个负责数据库增删查改操作的DateBaseTool类，并提供接口和单例，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用FMDB及CoreData实现多表查询">
+<meta property="og:url" content="http://yoursite.com/2016/10/16/使用FMDB及CoreData实现多表查询/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="使用FMDB及CoreData实现多表查询一、CoreData二零一四年做过一个电子书城的项目，由于数据模型不是特别复杂，最终选择使用CoreData来做本地电子书的数据管理。实现的思路是：在程序中定义了一个数据库相关的manager类，它提供一个单例，用来共享数据操作上下文NSManagedObjectContext，还有一个负责数据库增删查改操作的DateBaseTool类，并提供接口和单例，">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-11-26T05:15:17.719Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用FMDB及CoreData实现多表查询">
+<meta name="twitter:description" content="使用FMDB及CoreData实现多表查询一、CoreData二零一四年做过一个电子书城的项目，由于数据模型不是特别复杂，最终选择使用CoreData来做本地电子书的数据管理。实现的思路是：在程序中定义了一个数据库相关的manager类，它提供一个单例，用来共享数据操作上下文NSManagedObjectContext，还有一个负责数据库增删查改操作的DateBaseTool类，并提供接口和单例，">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 使用FMDB及CoreData实现多表查询 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                使用FMDB及CoreData实现多表查询
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-10-16T23:00:25+08:00" content="2016-10-16">
+              2016-10-16
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="使用FMDB及CoreData实现多表查询"><a href="#使用FMDB及CoreData实现多表查询" class="headerlink" title="使用FMDB及CoreData实现多表查询"></a>使用FMDB及CoreData实现多表查询</h1><h2 id="一、CoreData"><a href="#一、CoreData" class="headerlink" title="一、CoreData"></a>一、CoreData</h2><p>二零一四年做过一个电子书城的项目，由于数据模型不是特别复杂，最终选择使用CoreData来做本地电子书的数据管理。实现的思路是：在程序中定义了一个数据库相关的manager类，它提供一个单例，用来共享数据操作上下文NSManagedObjectContext，还有一个负责数据库增删查改操作的DateBaseTool类，并提供接口和单例，在程序的其它部分调用接口操作。 下面试相关代码：</p>
+<h5 id="加载数据库"><a href="#加载数据库" class="headerlink" title="加载数据库"></a>加载数据库</h5><pre><code>// 加载数据库
+- (void)initDateBaseWithEntity:(NSString *)entity key:(NSString *)key
+{
+ EMPLog(@&quot;加载数据库&quot;);
+// 创建context
+NSManagedObjectContext *context = [[EMPDataManager sharedDataManager] sharedContext];
+
+// 查询请求
+NSFetchRequest *request = [NSFetchRequest fetchRequestWithEntityName:entity];
+
+// 按照用户姓名升序排序
+NSSortDescriptor *sort = [NSSortDescriptor sortDescriptorWithKey:key ascending:YES];
+
+request.sortDescriptors = @[sort];
+
+_fetchedResultsController = [[NSFetchedResultsController alloc] initWithFetchRequest:request managedObjectContext:context sectionNameKeyPath:nil cacheName:nil];
+
+// 设置代理
+// _fetchedResultsController.delegate = self;
+
+NSError *error = nil;
+
+if ([_fetchedResultsController performFetch:&amp;error]) {
+
+    EMPLog(@&quot;查询成功&quot;);
+
+} else {
+
+    EMPLog(@&quot;查询失败 %@&quot;, error.localizedDescription);
+}
+}
+</code></pre><h5 id="查询数据"><a href="#查询数据" class="headerlink" title="查询数据"></a>查询数据</h5><pre><code> -(Book *)queryEntityByUrl:(NSString *)url
+{
+NSManagedObjectContext *context = [[EMPDataManager sharedDataManager] sharedContext];
+
+NSFetchRequest *reqeust=[[NSFetchRequest alloc]init];
+reqeust.entity=[NSEntityDescription entityForName:@&quot;Book&quot; inManagedObjectContext:context];
+
+NSPredicate *predicate=[NSPredicate predicateWithFormat:@&quot;filePath = %@&quot;,url];
+reqeust.predicate=predicate;
+
+NSError *error=nil;
+NSArray *retlist=[context executeFetchRequest:reqeust error:&amp;error];
+if(error)
+{
+    NSLog(@&quot;deleteDownloadTask error:%@&quot;,error);
+}
+return [retlist firstObject];
+}
+</code></pre><h5 id="插入数据"><a href="#插入数据" class="headerlink" title="插入数据"></a>插入数据</h5><pre><code>-(void)addBookWith:(NSString *)bookName path:(NSString *)path image:(NSString *)image success:(EMPAddSuccess)success
+{
+NSManagedObjectContext *context = [[EMPDataManager sharedDataManager] sharedContext];
+
+Book * oneBook;
+if (oneBook == nil) {
+    oneBook = [NSEntityDescription insertNewObjectForEntityForName:@&quot;Book&quot; inManagedObjectContext:context];
+}
+
+oneBook.sampleName = bookName;
+oneBook.sImagePath = image;
+oneBook.filePath = path;
+oneBook.dowState = kDOWLOADING;
+oneBook.dowProgress = 0;
+
+// 上下文保存
+if ([context save:nil]) {
+    success();
+//  NSLog(@&quot;保存成功&quot;);
+} else {
+    NSLog(@&quot;保存失败!&quot;);
+}
+}
+</code></pre><h5 id="更新数据"><a href="#更新数据" class="headerlink" title="更新数据"></a>更新数据</h5><pre><code>// 先查询
+Book * CBook = [self queryEntityByUrl:url];
+// 修改数据
+CBook.dowState = kDOWLOADING;
+// 让上下文保存
+[context updatedObjects];
+</code></pre><h5 id="删除数据"><a href="#删除数据" class="headerlink" title="删除数据"></a>删除数据</h5><pre><code>// 让上下文删除
+NSManagedObject * book = [_fetchedResultsController objectAtIndexPath:indexPath];
+[context deleteObject:book];
+</code></pre><h2 id="二、FMDB的使用"><a href="#二、FMDB的使用" class="headerlink" title="二、FMDB的使用"></a>二、FMDB的使用</h2><h3 id="创建数据库的步骤"><a href="#创建数据库的步骤" class="headerlink" title="创建数据库的步骤"></a>创建数据库的步骤</h3><h5 id="1，-创建数据库"><a href="#1，-创建数据库" class="headerlink" title="1， 创建数据库"></a>1， 创建数据库</h5><pre><code>NSString *filePath=[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@&quot;fmdb.sqlite&quot;];
+//创建数据库
+self.db=[FMDatabase databaseWithPath:filePath];
+//打开数据库
+if ([self.db open]) {
+    NSLog(@&quot;打开数据库成功&quot;);
+    //创建表格，除了select外，所有的操作都是更新
+    BOOL createTableResult=[self.db executeUpdate:@&quot;CREATE TABLE IF NOT EXISTS t_student (id integer PRIMARY KEY AUTOINCREMENT,name text,age integer)&quot;];
+    if (createTableResult) {
+        NSLog(@&quot;创建表成功&quot;);
+    }else{
+        NSLog(@&quot;创建表失败&quot;);
+    }
+}else{
+    NSLog(@&quot;打开数据库失败&quot;);
+}
+}
+// 操作数据库
+[self.db executeUpdate:@&quot;INSERT INTO t_student(name,age) VALUES(?,?)&quot;,s_name,s_age];
+</code></pre><p>使用FMDatabaseQueue保证线程安全，推荐使用，FMDatabaseQueue是一个串行队列，在多个线程来执行查询和更新时会使用这个类，避免同时访问同一个数据。</p>
+<pre><code> NSString *path = [[self _databasePath] stringByAppendingPathComponent:SNYXDabaseName];
+
+ // 创建数据库，并加入到FMDatabaseQueue队列中，且默认打开数据库。
+ self.databaseQueue = [FMDatabaseQueue databaseQueueWithPath:
+                          path];
+ [self.databaseQueue inDatabase:^(FMDatabase *db) {
+    //创建表
+    BOOL createTableResult=[db executeUpdate:@&quot;CREATE TABLE IF NOT EXISTS t_student (id integer PRIMARY KEY AUTOINCREMENT,name text,age integer)&quot;];
+    if (createTableResult) {
+        NSLog(@&quot;创建表成功&quot;);
+    }else{
+        NSLog(@&quot;创建表失败&quot;);
+    }
+}];
+}
+</code></pre><h4 id="2，比较版本号"><a href="#2，比较版本号" class="headerlink" title="2，比较版本号"></a>2，比较版本号</h4><p>在userDefault里面保存一份数据库的版本号，在每次打开数据库的时候先判断当前版本号与偏好设置中的是否相同，如果不同则执行更新表操作。</p>
+<h4 id="3，操作数据库"><a href="#3，操作数据库" class="headerlink" title="3，操作数据库"></a>3，操作数据库</h4><pre><code>[self.queue inDatabase:^(FMDatabase *db) {
+    NSString *sql = [NSString stringWithFormat:
+                     @&quot;create table if not exists %@ (id integer primary key autoincrement);&quot;,weak_self.tableName];
+    if ([db executeUpdate:sql]) {
+</code></pre><h4 id="4，封装一个数据库操作的专用队列"><a href="#4，封装一个数据库操作的专用队列" class="headerlink" title="4，封装一个数据库操作的专用队列"></a>4，封装一个数据库操作的专用队列</h4><pre><code>static inline void dispatch_async_on_database_queue(dispatch_block_t block) {
+if (block) dispatch_async(snyxdatabase_opration_queue(), block);
+}
+
+// 获取数据库的队列
+static inline dispatch_queue_t snyxdatabase_opration_queue(void){
+static dispatch_queue_t queue = nil;
+static dispatch_once_t onceToken;
+dispatch_once(&amp;onceToken, ^{
+    queue = dispatch_queue_create(&quot;snyxdatabase_opration_queue&quot;, DISPATCH_QUEUE_SERIAL);
+});
+return queue;
+}
+</code></pre><h4 id="5，更新操作"><a href="#5，更新操作" class="headerlink" title="5，更新操作"></a>5，更新操作</h4><pre><code>   // 表明定义为结构体，typedef  NS_ENUM(NSInteger,SNYXDatabaseTable){}
+   根据参数查询表名和条件语句。他们都写在了SNYXDatabase+Helper.h中，这个类专门负责根据表明返回需要的名称和语句。 
+- (void)updateWithTable:(SNYXDatabaseTable)table
+        theInfoDict:(NSDictionary *)dict
+    complete:(DatabaseResult)complete{
+
+    }
+    @weakify(self);
+   [self.databaseQueue inDatabase:^(FMDatabase *db) {
+
+    // 我们在更新表之前，先要确定更新的行，要根据主键或者几列来确定，就是在这里实现的：表明，根据字段查询行，得到查询的数据。
+    NSString *tableName = [self getTableName:table];
+    NSString *condition = [self getDefaultConditionSqlWithTableName:table];
+    NSArray *conditionValues = [self getDefaultQueryValues:table dict:dict];
+    // 查询结果
+    FMResultSet *res = [weak_self executeQuery:sql values:conditionValues db:db];
+    // res.next代表有查询结果
+        if (res.next) {//说明该条记录存在，执行更新
+            [res close];
+            NSMutableArray *values = [NSMutableArray array];
+            NSMutableString *attStr = [NSMutableString string];
+            // 准备查询语句和赋值
+            for (NSString *key in dict.allKeys) {
+                [attStr appendFormat:@&quot;%@ = ?,&quot;,key];
+                [values addObject:dict[key]];
+            }
+</code></pre><p>小知识： </p>
+<p><strong>static inline void–内联函数：</strong>  内联函数和成员函数的区别在于，内联函数加快了函数的执行速度，它是牺牲空间来节省时间的一种设置，因为调用函数需要浪费时间，写成内联函数可以在调用时，使用函数体内容代替函数调用，类似于宏定义，在我们没有复杂的循环语句且调用次数较多时，可以使用内联函数。<br>数据库操作中，很少会关闭数据库的操作，程序关闭时，数据库自然也会关闭，每次重新打开都会消耗性能。</p>
+<p><strong>IOS中的类别Category和扩展Extension</strong><br>Category可以为系统类进行拓展，我们可以不用继承系统类，而直接给系统类添加方法，这样既不用生成子类，又方便项目管理，方便源码共享。Category理论上不能添加变量，但是可以使用@dynamic来弥补。类别的优先级较高，可覆盖原类的方法，不可调用super方法，<br>某些情况下，我们需要声明一个@property，它对外只读，对内是可读写，此时可以用Extension，Extension也叫作匿名分类，不像分类的小括号中必须有分类名称。</p>
+<pre><code>// 括号内为我们起的分类名称
+@implementation NSObject (Category)
+</code></pre><h4 id="6，查询语句整理"><a href="#6，查询语句整理" class="headerlink" title="6，查询语句整理"></a>6，查询语句整理</h4><p>我们可能经常会遇到需要手写查询语句的情况，尤其是涉及到多表查询的情况，更需要我们熟练的掌握各种sql语句，下面是一些常用的整理。 </p>
+<h5 id="1-普通的条件查询"><a href="#1-普通的条件查询" class="headerlink" title="1.普通的条件查询"></a>1.普通的条件查询</h5><pre><code>SELECT nickname,email FROM testtable 
+</code></pre><h5 id="2-筛选查询"><a href="#2-筛选查询" class="headerlink" title="2.筛选查询"></a>2.筛选查询</h5><pre><code>// DISTINCT可以去掉查询的重复数据
+SELECT DISTINCT nickname,email FROM testtable 
+</code></pre><h5 id="3-限制查询行数"><a href="#3-限制查询行数" class="headerlink" title="3.限制查询行数"></a>3.限制查询行数</h5><pre><code>// 只返回查询的前两行
+SELECT TOP 2 nickname,email FROM testtable
+// 返回查询到的前百分之20
+SELECT TOP 20 PERCENT nickname,email FROM testtable
+// 查询符合条件的行数
+select count(*)from testtable where %@ = &apos;%@&apos;
+// 查询所有符合的数据，但限制20条，或者是从10到20条的分页数据
+select  * from testtable where %@ = &apos;%@&apos; limit 20
+select  * from testtable where %@ = &apos;%@&apos; limit 10，20
+</code></pre><h5 id="4-查询时给表起别名"><a href="#4-查询时给表起别名" class="headerlink" title="4.查询时给表起别名"></a>4.查询时给表起别名</h5><pre><code>// 查询用户表和城市表中，cityid相同的数据的username和cityid两列数据
+SELECT `username`,citytable.cityid
+FROM `usertable`,`citytable`
+WHERE usertable.cityid=citytable.cityid 
+</code></pre><h5 id="5-查询条件WHERE和排序"><a href="#5-查询条件WHERE和排序" class="headerlink" title="5.查询条件WHERE和排序"></a>5.查询条件WHERE和排序</h5><pre><code>// where后面可以接各种的运算符&gt;、&gt;=、=、、!&gt;、!= AND
+// 下面的排序方式是，先以age进行排序，再根据userid排序（当age相同的情况下，根据userid再排序）
+SELECT * FROM `usertable` ORDER BY `age` DESC,`userid` ASC   
+</code></pre><h5 id="6-多表连接查询"><a href="#6-多表连接查询" class="headerlink" title="6.多表连接查询"></a>6.多表连接查询</h5><p>连接是关系数据库模型的主要特点，它区别于其它类型的数据库管理，当检索数据时，通过连接操作，查询出存在多个表中的不同实体的信息。连接分下面三种方式： </p>
+<p>1，内连接 INNER JOIN<br>我们可以把普通的单张表查询理解为内连接，例如： </p>
+<pre><code>// 查询两张表中studentid相同的且都有数据的列
+select s.name,m.mark from student s,mark m where s.id=m.studentid
+// 它相当于使用内连接
+select s.name,m.mark from student s inner join mark m on s.id=m.studentid 
+</code></pre><p>2，外左连接 LEFT JOIN </p>
+<pre><code>// 将左边的表全部选出来，即便mark表中有些分数没有，也会被查出来，区别于内连接，就是存在左连接表中没有值得数据
+select s.name,m.mark from student s left join mark m on s.id=m.studentid 
+</code></pre><p>3，外右连接 RIGHT JOIN<br>    // 将右边表的数据全部取出来，无论左表中有没有数据匹配，而后面的on条件语句，其实是相当于一个行的对应，相同的id对应一行。<br>    select s.name,m.mark from student s right join mark m on s.id=m.studentid<br>4，全连接 FILL JOIN<br>    // 将右边表的数据全部取出来，无论左表中有没有数据匹配，而后面的on条件语句，其实是相当于一个行的对应，相同的id对应一行。 </p>
+<pre><code>select s.name,m.mark from student s full join mark m on s.id=m.studentid
+
+// 下面是一个在实际项目中用到的查询语句
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSString * sql = [NSString stringWithFormat:@&quot;select DISTINCT A.*, B.%@, B.%@  From %@ as A Left Join %@ as B On A.%@=B.%@  where A.%@ = &apos;%@&apos; and A.%@ = &apos;%@&apos; and A.id &lt; %ld order by id desc limit %ld;&quot;,yx_customer_service_nickname,yx_customer_service_portrait_url,t_OSMessage,t_OSCustomInfo,yx_customer_service_id,yx_customer_service_id,yx_current_user_id,userId,yx_contact_id,contactId,(long)lastId,(long)pageCount]; 
+</code></pre><h5 id="7-插入语句"><a href="#7-插入语句" class="headerlink" title="7.插入语句"></a>7.插入语句</h5><pre><code>// 插入一条数据，四个字段
+INSERT INTO Persons VALUES (&apos;Gates&apos;, &apos;Bill&apos;, &apos;Xuanwumen 10&apos;, &apos;Beijing&apos;)
+// 插入一条数据，只有两个字段
+INSERT INTO Persons (LastName, Address) VALUES (&apos;Wilson&apos;, &apos;Champs-Elysees&apos;)  
+</code></pre><h5 id="8-删除语句"><a href="#8-删除语句" class="headerlink" title="8.删除语句"></a>8.删除语句</h5><pre><code>// 如果任何条件语句都没有，相当于删除整个表的内容
+DELETE FROM Person WHERE LastName = &apos;Wilson&apos;  
+</code></pre><h5 id="9-更新语句"><a href="#9-更新语句" class="headerlink" title="9.更新语句"></a>9.更新语句</h5><pre><code>UPDATE Person SET FirstName = &apos;Fred&apos; WHERE LastName = &apos;Wilson&apos;
+UPDATE Person SET Address = &apos;Zhongshan 23&apos;, City = &apos;Nanjing&apos;
+WHERE LastName = &apos;Wilson&apos; 
+</code></pre>
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/15/符号化IOS崩溃日志，解读堆栈信息/" rel="next" title="符号化IOS崩溃日志，解读堆栈信息">
+                <i class="fa fa-chevron-left"></i> 符号化IOS崩溃日志，解读堆栈信息
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/10/30/翻翻小视频录制原理/" rel="prev" title="翻翻小视频录制原理">
+                翻翻小视频录制原理 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#使用FMDB及CoreData实现多表查询"><span class="nav-number">1.</span> <span class="nav-text">使用FMDB及CoreData实现多表查询</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#一、CoreData"><span class="nav-number">1.1.</span> <span class="nav-text">一、CoreData</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#加载数据库"><span class="nav-number">1.1.0.0.1.</span> <span class="nav-text">加载数据库</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#查询数据"><span class="nav-number">1.1.0.0.2.</span> <span class="nav-text">查询数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#插入数据"><span class="nav-number">1.1.0.0.3.</span> <span class="nav-text">插入数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#更新数据"><span class="nav-number">1.1.0.0.4.</span> <span class="nav-text">更新数据</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#删除数据"><span class="nav-number">1.1.0.0.5.</span> <span class="nav-text">删除数据</span></a></li></ol></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#二、FMDB的使用"><span class="nav-number">1.2.</span> <span class="nav-text">二、FMDB的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建数据库的步骤"><span class="nav-number">1.2.1.</span> <span class="nav-text">创建数据库的步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1，-创建数据库"><span class="nav-number">1.2.1.0.1.</span> <span class="nav-text">1， 创建数据库</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2，比较版本号"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">2，比较版本号</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3，操作数据库"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">3，操作数据库</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4，封装一个数据库操作的专用队列"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">4，封装一个数据库操作的专用队列</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#5，更新操作"><span class="nav-number">1.2.1.4.</span> <span class="nav-text">5，更新操作</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#6，查询语句整理"><span class="nav-number">1.2.1.5.</span> <span class="nav-text">6，查询语句整理</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#1-普通的条件查询"><span class="nav-number">1.2.1.5.1.</span> <span class="nav-text">1.普通的条件查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#2-筛选查询"><span class="nav-number">1.2.1.5.2.</span> <span class="nav-text">2.筛选查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#3-限制查询行数"><span class="nav-number">1.2.1.5.3.</span> <span class="nav-text">3.限制查询行数</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#4-查询时给表起别名"><span class="nav-number">1.2.1.5.4.</span> <span class="nav-text">4.查询时给表起别名</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#5-查询条件WHERE和排序"><span class="nav-number">1.2.1.5.5.</span> <span class="nav-text">5.查询条件WHERE和排序</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#6-多表连接查询"><span class="nav-number">1.2.1.5.6.</span> <span class="nav-text">6.多表连接查询</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#7-插入语句"><span class="nav-number">1.2.1.5.7.</span> <span class="nav-text">7.插入语句</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#8-删除语句"><span class="nav-number">1.2.1.5.8.</span> <span class="nav-text">8.删除语句</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#9-更新语句"><span class="nav-number">1.2.1.5.9.</span> <span class="nav-text">9.更新语句</span></a></li></ol></li></ol></li></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

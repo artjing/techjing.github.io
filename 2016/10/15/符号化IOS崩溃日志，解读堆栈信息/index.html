@@ -1,0 +1,782 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="符号化IOS崩溃日志，解读堆栈信息产生崩溃日志的几种情况:1, 响应超时。当程序退到后台，applicationDidEnterBackground等这些与UIApplicationDelegate相对应的方法，如果不在有限的时间去完成，操作系统将终止应用，此时会产生崩溃日志。  2，双击home键退出时，会生成一个崩溃日志。但是注意，双击home按钮后看到的运行过的应用，那些应用不一定是在运行，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="符号化IOS崩溃日志，解读堆栈信息">
+<meta property="og:url" content="http://yoursite.com/2016/10/15/符号化IOS崩溃日志，解读堆栈信息/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="符号化IOS崩溃日志，解读堆栈信息产生崩溃日志的几种情况:1, 响应超时。当程序退到后台，applicationDidEnterBackground等这些与UIApplicationDelegate相对应的方法，如果不在有限的时间去完成，操作系统将终止应用，此时会产生崩溃日志。  2，双击home键退出时，会生成一个崩溃日志。但是注意，双击home按钮后看到的运行过的应用，那些应用不一定是在运行，">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-11-26T03:58:29.414Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="符号化IOS崩溃日志，解读堆栈信息">
+<meta name="twitter:description" content="符号化IOS崩溃日志，解读堆栈信息产生崩溃日志的几种情况:1, 响应超时。当程序退到后台，applicationDidEnterBackground等这些与UIApplicationDelegate相对应的方法，如果不在有限的时间去完成，操作系统将终止应用，此时会产生崩溃日志。  2，双击home键退出时，会生成一个崩溃日志。但是注意，双击home按钮后看到的运行过的应用，那些应用不一定是在运行，">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 符号化IOS崩溃日志，解读堆栈信息 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                符号化IOS崩溃日志，解读堆栈信息
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-10-15T23:00:25+08:00" content="2016-10-15">
+              2016-10-15
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="符号化IOS崩溃日志，解读堆栈信息"><a href="#符号化IOS崩溃日志，解读堆栈信息" class="headerlink" title="符号化IOS崩溃日志，解读堆栈信息"></a>符号化IOS崩溃日志，解读堆栈信息</h2><h5 id="产生崩溃日志的几种情况"><a href="#产生崩溃日志的几种情况" class="headerlink" title="产生崩溃日志的几种情况:"></a>产生崩溃日志的几种情况:</h5><p>1, 响应超时。当程序退到后台，applicationDidEnterBackground等这些与UIApplicationDelegate相对应的方法，如果不在有限的时间去完成，操作系统将终止应用，此时会产生崩溃日志。 </p>
+<p>2，双击home键退出时，会生成一个崩溃日志。但是注意，双击home按钮后看到的运行过的应用，那些应用不一定是在运行，也不一定是被挂起，应用在后台保留约十分钟，然后操作系统将其终止，所以双击看到的只是表明那是一系列过去打开过的应用，删除那些图标不会产生任何崩溃日志。 </p>
+<p>3，低内存的终止。低内存的警告会执行didReceiveMemoryWarning方法，我们可以在里面释放一些不用的资源，如果一直受到内存警告，程序会因为低内存而终止相应，并生成崩溃日志。对于低内存警告产生的警告会很不一样，一般我们最好用instrument找到问题，并修复。再就是提高代码的质量，在didReceiveMemoryWarning方法中处理下数据，将不用的对象释放。</p>
+<pre><code>- (void)didReceiveMemoryWarning {
+[super didReceiveMemoryWarning];
+// Dispose of any resources that can be recreated.
+}
+</code></pre><h4 id="获取崩溃日志"><a href="#获取崩溃日志" class="headerlink" title="获取崩溃日志"></a>获取崩溃日志</h4><p>1，当我们的应用上线后，或者我们无法通过在真机上调试定位到崩溃时，可以通过查看存在设备中的崩溃日志，定位到我们的break。</p>
+<p>2，崩溃日志的位置<br>一种方式是真机连接xcode，找到windows-device-view device log下面的日志列表。</p>
+<p>第二种方法是设备与电脑上的iTunes Store同步后，会将崩溃日志保存在电脑上。根据电脑操作系统的不同，崩溃日志将保存在以下位置:</p>
+<p>Mac OS X:~/Library/Logs/CrashReporter/MobileDevice/<br>Windows XP: C:Documents and Settings<username>Application DataApple ComputerLogsCrashReporterMobileDevice&lt;DEVICE_NAME&gt;<br>Windows Vista or 7:  C:Users<username>AppDataRoamingApple ComputerLogsCrashReporterMobileDevice&lt;DEVICE_NAME&gt;</username></username></p>
+<h4 id="解析crash-logs"><a href="#解析crash-logs" class="headerlink" title="解析crash logs"></a>解析crash logs</h4><p>Step 1:首先创建一个文件夹，把拿到的崩溃log放进去。</p>
+<p>Step 2:再找到symbolicatecrash，Xcode6.0之后位置改成 “Contents/SharedFrameworks”<br>/Applications/Xcode.app/Contents/SharedFrameworks/DVTFoundation.framework/Versions/A/Resources/symbolicatecrash</p>
+<p>实在找不到可以打开终端输入 find /Applications/Xcode.app -name symbolicatecrash -type f ，然后终端会返回这个文件的路径<br>只要找到”symbolicatecrash” 文件, 复制然后粘贴到刚才创建的 “CrashReport” 文件夹里面.</p>
+<p>Step 3: 从Xcode Archive的二进制文件中找到.dSYM文件和.app文件拷贝到刚才创建的 “CrashReport” 文件夹里面.</p>
+<p>Step 4:打开终端进入CrashReport文件夹，依次输入以下命令行:<br>cd /Users/username/Desktop/CrashReport<br>export DEVELOPER_DIR=/Applications/XCode.app/Contents/Developer<br>./symbolicatecrash ./<em>.crash ./</em>.app.dSYM &gt; symbol.crash<br>这时候终端将会进行处理……<br>处理结果是生成一个新的文件symbol.crash。然后打开这个文件。</p>
+<h4 id="分析logs定位崩溃"><a href="#分析logs定位崩溃" class="headerlink" title="分析logs定位崩溃"></a>分析logs定位崩溃</h4><h6 id="崩溃日志的解读："><a href="#崩溃日志的解读：" class="headerlink" title="崩溃日志的解读："></a>崩溃日志的解读：</h6><h6 id="1-进程信息"><a href="#1-进程信息" class="headerlink" title="(1) 进程信息"></a>(1) <strong>进程信息</strong></h6><p>第一部分是闪退进程的相关信息。 </p>
+<pre><code>Incident Identifier: 9E634A79-C69B-440D-9A44-5D6A58E196DA
+CrashReporter Key:   32786e88d326dd7c5c562760f12bd2826916cad2
+Hardware Model:      iPhone7,2
+Process:             secondHand [5025]
+Path:                /private/var/mobile/Containers/Bundle/Application/52F913A2-001A-4177-A5EC-D1BD743CCC31/secondHand.app/secondHand
+Identifier:          com.suning.fanfan
+Version:             1.0.0.1 (1.0.0)
+Code Type:           ARM-64 (Native)
+Parent Process:      launchd [1]
+</code></pre><p>Incident Identifier是崩溃报告的唯一标识符。<br>CrashReporter Key 是与设备标识相对应的唯一键值。虽然它不是真正的设备唯一标识符，但也是一个非常有用的信息，如果你看到100个崩溃日志的CrashReporter Key值都是相同的，或者只有少数不同的CrashReport值，那说明这不是一个普遍的问题，这个崩溃只发生在了一个或少数几个设备上。Hardware Model 标识设备类型。 如果大部分崩溃日志都是来自相同的设备类型，说明应用只在某特定类型的设备上有问题。上面的日志里，崩溃日志产生的设备是iPhone6 plus。iPhone6是第七代iPhone，iPhone7.2是第七代iPhone的类型，iPhone6和iPhone6 Plus的类型分别是7.1和7.2。Process 是应用名称。中括号里面的数字是闪退时应用的进程ID。 Path 是app的位置.Identifier 数应用的boundle id。Code Type是手机设置的系统架构，这个是ARM-64。 </p>
+<h6 id="2-基本信息"><a href="#2-基本信息" class="headerlink" title="(2) 基本信息"></a>(2) <strong>基本信息</strong></h6><p>这部分给出了一些基本信息，包括闪退发生的日期和时间，设备的iOS版本。如果有很多崩溃日志都来自iOS8.0，说明问题只发生在iOS8.0上。 </p>
+<pre><code>Date/Time:           2016-08-12 14:44:38.262 +0800
+Launch Time:         2016-08-12 14:44:35.559 +0800
+OS Version:          iOS 8.1.2 (12B440)
+Report Version:      105 
+</code></pre><h6 id="3-异常"><a href="#3-异常" class="headerlink" title="(3) 异常"></a>(3) <strong>异常</strong></h6><p>在这部分，可以看到闪退发生时，抛出的异常类型。还能看到异常编码Exception Codes，和抛出异常的线程Thread。根据崩溃报告类型的不同，还有一些其它的信息。 </p>
+<pre><code>Exception Type:  EXC_CRASH (SIGABRT)
+Exception Codes: 0x0000000000000000, 0x0000000000000000
+Triggered by Thread:  0
+
+Last Exception Backtrace:
+(0x186e4259c 0x1975980e4 0x186e42220 0x187c4db10 0x10014cf80 0x10014c60c 0x10014bdd0 0x10014ba44 0x10014bc80 0x18b628d34 0x18b611e48 0x18b6286d0 0x18b62835c 0x18b6218b0 0x18b5f4fa8 0x18b893f58 0x18b5f3510 0x186dfa9ec 0x186df9c90 0x186df7d40 0x186d250a4 0x18fec75a4 0x18b65a3c0 0x100187c88 0x197c06a08)
+</code></pre><h6 id="4-线程回溯"><a href="#4-线程回溯" class="headerlink" title="(4) 线程回溯"></a>(4) 线程回溯</h6><p>这部分提供应用中所有线程的回溯日志。 回溯是闪退发生时所有活动帧清单。它包含闪退发生时调用函数的清单。看下面这行日志。 </p>
+<pre><code>7   AFNetworking                      0x00000001009601c4 0x100954000 + 49604
+</code></pre><p>它包括四列: </p>
+<p>帧编号:7 </p>
+<p>二进制库的名称:AFNetworking </p>
+<p>调用方法的地址:0x00000001009601c4 </p>
+<p>第四列分为两个子列，一个基本地址和一个偏移量。0x100954000 + 49604, 第一个数字指向文件，第二个数字指向文件中的代码行。 </p>
+<h6 id="5-线程状态"><a href="#5-线程状态" class="headerlink" title="(5) 线程状态"></a>(5) 线程状态</h6><p>这部分是闪退时寄存器中的值。一般不需要这部分的信息，因为回溯部分的信息已经足够让你找出问题所在。 </p>
+<pre><code>Thread 0 crashed with ARM Thread State (64-bit):
+x0: 0x0000000000000000   x1: 0x0000000000000000   x2: 0x0000000000000000   x3: 0x00000001702e03b7
+x4: 0x0000000196d89dfd   x5: 0x000000016fd77400   x6: 0x000000000000006e   x7: 0x0000000000000f80
+x8: 0x0000000008000000   x9: 0x0000000004000000  x10: 0x0000000000000200  x11: 0x0000000000000000
+</code></pre><h6 id="6-二进制映像"><a href="#6-二进制映像" class="headerlink" title="(6) 二进制映像"></a>(6) 二进制映像</h6><p>这部分列出了闪退时已经加载的二进制文件。 </p>
+<pre><code>Binary Images:
+0x100088000 - 0x100723fff secondHand arm64  &lt;c8687c8084e13dd5af5c3a56822cca91&gt; /var/mobile/Containers/Bundle/Application/52F913A2-001A-4177-A5EC-D1BD743CCC31/secondHand.app/secondHand
+0x100954000 - 0x100987fff AFNetworking arm64  &lt;67843cd1f10431e086a5e163e9085ca1&gt; /var/mobile/Containers/Bundle/Application/52F913A2-001A-4177-A5EC-D1BD743CCC31/secondHand.app/Frameworks/AFNetworking.framework/AFNetworking 
+</code></pre><h5 id="崩溃日志符号化（Symbolication）："><a href="#崩溃日志符号化（Symbolication）：" class="headerlink" title="崩溃日志符号化（Symbolication）："></a>崩溃日志符号化（Symbolication）：</h5><p>上面列出的是我们所拿到的原始的崩溃日志的信息，仅仅看二进制库的基本地址和偏移量，我们很难定位到崩溃，所以我们接下来还要进行下一个步骤，那就是符号化——将这些十六进制地址转化成方法名称和行数的过程。 </p>
+<p>从Xcode/Organizer获取崩溃日志后过几秒钟，崩溃日志将被自动符号化。Xcode符号化崩溃日志时，需要访问与App Store上对应的应用二进制文件以及生成二进制文件时产生的 .dSYM 文件。必需完全匹配才行。否则，日志将无法被完全符号化。这就要求我们在提交appstore后，务必保留我们最后提交的包，以及它的.dSYM文件，以便后面我们进行符号化。下面是符号化后的样式： </p>
+<p>原崩溃文件： </p>
+<pre><code>7   libc++abi.dylib                   0x0000000196d85738 0x196d68000 + 120632
+8   libobjc.A.dylib                   0x0000000197598290 0x197590000 + 33424
+</code></pre><p>转化后： </p>
+<pre><code>Last Exception Backtrace:
+0   CoreFoundation                    0x186e4259c __exceptionPreprocess + 132
+1   libobjc.A.dylib                   0x1975980e4 objc_exception_throw + 60
+2   CoreFoundation                    0x186e42220 -[NSException raise] + 12
+3   Foundation                        0x187c4db10 -[NSObject(NSKeyValueCoding) setValue:forKey:] + 248
+4   secondHand                        0x10014cf80 -[SHTabbarReleaseController alertController] (SHTabbarReleaseController.m:382)
+5   secondHand                        0x10014c60c -[SHTabbarReleaseController showSuccessView] (SHTabbarReleaseController.m:300)
+</code></pre><h5 id="《翻翻》崩溃日志解读实战："><a href="#《翻翻》崩溃日志解读实战：" class="headerlink" title="《翻翻》崩溃日志解读实战："></a>《翻翻》崩溃日志解读实战：</h5><p>先看下面的崩溃日志，它是应用《翻翻》在1.0.0上线后，在8.0系统上拿到的崩溃日志，并进行了符号化： </p>
+<pre><code>Exception Type:  EXC_CRASH (SIGABRT)
+Exception Codes: 0x0000000000000000, 0x0000000000000000
+Triggered by Thread:  0
+
+Last Exception Backtrace:
+0   CoreFoundation                    0x186e4259c __exceptionPreprocess + 132
+1   libobjc.A.dylib                   0x1975980e4 objc_exception_throw + 60
+2   CoreFoundation                    0x186e42220 -[NSException raise] + 12
+3   Foundation                        0x187c4db10 -[NSObject(NSKeyValueCoding)     setValue:forKey:] + 248
+4   secondHand                        0x10014cf80 -[SHTabbarReleaseController     alertController] (SHTabbarReleaseController.m:382)
+5   secondHand                        0x10014c60c -[SHTabbarReleaseController showSuccessView] (SHTabbarReleaseController.m:300)
+6   secondHand                        0x10014bdd0 __41-[SHTabbarReleaseController clickPublish]_block_invoke.103 (SHTabbarReleaseController.m:157)
+7   secondHand                        0x10014ba44 -[SHTabbarReleaseController checkLoginWithLoginedBlock:loginCancelBlock:] (SHTabbarReleaseController.m:136)
+8   secondHand                        0x10014bc80 -[SHTabbarReleaseController clickPublish] (SHTabbarReleaseController.m:154)
+9   UIKit                             0x18b628d34 -[UIApplication sendAction:to:from:forEvent:] + 96
+10  UIKit                             0x18b611e48 -[UIControl _sendActionsForEvents:withEvent:] + 612
+11  UIKit                             0x18b6286d0 -[UIControl touchesEnded:withEvent:] + 592
+12  UIKit                             0x18b62835c -[UIWindow _sendTouchesForEvent:] + 700
+13  UIKit                             0x18b6218b0 -[UIWindow sendEvent:] + 684
+14  UIKit                             0x18b5f4fa8 -[UIApplication sendEvent:] + 264
+15  UIKit                             0x18b893f58 _UIApplicationHandleEventFromQueueEvent + 14992
+16  UIKit                             0x18b5f3510 _UIApplicationHandleEventQueue + 1616
+17  CoreFoundation                    0x186dfa9ec __CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION__ + 24
+18  CoreFoundation                    0x186df9c90 __CFRunLoopDoSources0 + 264
+19  CoreFoundation                    0x186df7d40 __CFRunLoopRun + 712
+20  CoreFoundation                    0x186d250a4 CFRunLoopRunSpecific + 396
+21  GraphicsServices                  0x18fec75a4 GSEventRunModal + 168
+22  UIKit                             0x18b65a3c0 UIApplicationMain + 1488
+23  secondHand                        0x100187c88 main (main.m:14)
+24  libdyld.dylib                     0x197c06a08 start + 4
+</code></pre><p>找到崩溃日志中问题的方法： </p>
+<p>1，看到上图中，异常类型是EXC_CRASH (SIGABRT)， SIGABRT一般是由于某个对象上调用了不存在的方法导致的。EXC_BAD_ACCESS是访问已被释放的内存导致。我们猜测这里可能是发送了unrecogized的方法导致。如果有具体的崩溃原因，会写在Exception Codes的下面。 </p>
+<p>2，接着往下看，我们一般从下往上读回溯日志。frame：24是最先调用的，因为它后面写着start +。可以先忽略掉系统库和框架。跟应用源代码相关的帧是最重要的，然后我们定位到frame 4   secondHand                        0x10014cf80 -[SHTabbarReleaseController     alertController] (SHTabbarReleaseController.m:382，在执行它的第382行的代码的时候闪退的。打开Xcode定位到那行代码，这里看到的是在ios8中调用了一个ios9以后才有的方法，导致的崩溃。 </p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/22/IOS中的Webview与JS交互方式，以及webkit/" rel="next" title="UIWebView与Js的三种交互方式">
+                <i class="fa fa-chevron-left"></i> UIWebView与Js的三种交互方式
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/10/16/使用FMDB及CoreData实现多表查询/" rel="prev" title="使用FMDB及CoreData实现多表查询">
+                使用FMDB及CoreData实现多表查询 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#符号化IOS崩溃日志，解读堆栈信息"><span class="nav-number">1.</span> <span class="nav-text">符号化IOS崩溃日志，解读堆栈信息</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#产生崩溃日志的几种情况"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">产生崩溃日志的几种情况:</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#获取崩溃日志"><span class="nav-number">1.0.1.</span> <span class="nav-text">获取崩溃日志</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解析crash-logs"><span class="nav-number">1.0.2.</span> <span class="nav-text">解析crash logs</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分析logs定位崩溃"><span class="nav-number">1.0.3.</span> <span class="nav-text">分析logs定位崩溃</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#崩溃日志的解读："><span class="nav-number">1.0.3.0.1.</span> <span class="nav-text">崩溃日志的解读：</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#1-进程信息"><span class="nav-number">1.0.3.0.2.</span> <span class="nav-text">(1) 进程信息</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#2-基本信息"><span class="nav-number">1.0.3.0.3.</span> <span class="nav-text">(2) 基本信息</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#3-异常"><span class="nav-number">1.0.3.0.4.</span> <span class="nav-text">(3) 异常</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#4-线程回溯"><span class="nav-number">1.0.3.0.5.</span> <span class="nav-text">(4) 线程回溯</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#5-线程状态"><span class="nav-number">1.0.3.0.6.</span> <span class="nav-text">(5) 线程状态</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#6-二进制映像"><span class="nav-number">1.0.3.0.7.</span> <span class="nav-text">(6) 二进制映像</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#崩溃日志符号化（Symbolication）："><span class="nav-number">1.0.3.1.</span> <span class="nav-text">崩溃日志符号化（Symbolication）：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#《翻翻》崩溃日志解读实战："><span class="nav-number">1.0.3.2.</span> <span class="nav-text">《翻翻》崩溃日志解读实战：</span></a></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>

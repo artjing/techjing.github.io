@@ -1,0 +1,893 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="微信小视频录制功能介绍1，固定4：3的拍摄比例  2，录制使用和时长的提示动画  3，双击放大拍摄内容  4，固定15秒的倒计时动画  6，按住不放的按钮录制  7，录制完成后自动上传  AVFoundation的简介AVFoundation中提供了很多现成的播放器和录音机，但事实上它还有更加底层的内容可以供开发者使用，因为AVFoundation中有很多和底层输入、输出设备打交道的类，依靠这些类">
+<meta property="og:type" content="article">
+<meta property="og:title" content="翻翻小视频录制原理">
+<meta property="og:url" content="http://yoursite.com/2016/10/30/翻翻小视频录制原理/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="微信小视频录制功能介绍1，固定4：3的拍摄比例  2，录制使用和时长的提示动画  3，双击放大拍摄内容  4，固定15秒的倒计时动画  6，按住不放的按钮录制  7，录制完成后自动上传  AVFoundation的简介AVFoundation中提供了很多现成的播放器和录音机，但事实上它还有更加底层的内容可以供开发者使用，因为AVFoundation中有很多和底层输入、输出设备打交道的类，依靠这些类">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2018-11-26T03:58:20.920Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="翻翻小视频录制原理">
+<meta name="twitter:description" content="微信小视频录制功能介绍1，固定4：3的拍摄比例  2，录制使用和时长的提示动画  3，双击放大拍摄内容  4，固定15秒的倒计时动画  6，按住不放的按钮录制  7，录制完成后自动上传  AVFoundation的简介AVFoundation中提供了很多现成的播放器和录音机，但事实上它还有更加底层的内容可以供开发者使用，因为AVFoundation中有很多和底层输入、输出设备打交道的类，依靠这些类">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Muse',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 翻翻小视频录制原理 | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                翻翻小视频录制原理
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2016-10-30T23:12:25+08:00" content="2016-10-30">
+              2016-10-30
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="微信小视频录制"><a href="#微信小视频录制" class="headerlink" title="微信小视频录制"></a>微信小视频录制</h4><h5 id="功能介绍"><a href="#功能介绍" class="headerlink" title="功能介绍"></a>功能介绍</h5><p>1，固定4：3的拍摄比例 </p>
+<p>2，录制使用和时长的提示动画 </p>
+<p>3，双击放大拍摄内容 </p>
+<p>4，固定15秒的倒计时动画 </p>
+<p>6，按住不放的按钮录制 </p>
+<p>7，录制完成后自动上传 </p>
+<h5 id="AVFoundation的简介"><a href="#AVFoundation的简介" class="headerlink" title="AVFoundation的简介"></a>AVFoundation的简介</h5><p><strong>AVFoundation</strong>中提供了很多现成的播放器和录音机，但事实上它还有更加底层的内容可以供开发者使用，因为AVFoundation中有很多和底层输入、输出设备打交道的类，依靠这些类，开发人员就不必只使用封装好的AVAudioPlayer、AVAudioRecorder、AVPlayer等，而是操作输入设备（摄像头和麦克风等）。  </p>
+<p><strong>AVCaptureDevice：</strong>输入设备，包括摄像头麦克风等。 </p>
+<p><strong>AVCaptureOutput：</strong>输出数据管理对象，用于接收各类输出数据，通常使用AVCaptureVideoDataOutput、AVCaptureAudioDataOutput等，该对象呗添加到AVCaptureSession中管理， </p>
+<p><strong>AVCaptureVideoPreviewLayer：</strong>相机拍摄预览图层，是CALayer的子类，该对象可以实时查看效果，创建时必须制定<br>对应的AVCaptureSession。 </p>
+<p><strong>AVCaptureSession：</strong>媒体捕捉会话，负责把捕捉的音视频数据输出到设备中，一个AVCaptureSession可以有多个输入输出。</p>
+<p><strong>AVAsset：</strong>多媒体一般是以文件或者流的形式存在，直接操作多媒体文件不方便，AVFoundation提供了一个多媒体载体类AVAsset。</p>
+<p> <strong>mvhd（movie header）</strong>是视频的描述部分，包含了视频的基本信息，比如时长，创建时间等，preferredRate、preferredVolume，默认速度和音量，creationDate创建时间，对应到AVAsset中。<br><strong>CMTime：</strong>这个结构体中有value、timesacle、duration，duration是由视频中的duration和timescale共同组成。<br><strong>AVAssetTrack：</strong> 一般视频至少有两个轨道，一个视频的一个音频的，AVFoundation中的AVAssetTrack专门用来承载多媒体中的track。它的tkhd中包含了duration,rate,volume,created，还有一个track的唯一标识，track id。<br>获取帧率和比特率的方法：  </p>
+<pre><code>AVAssetTrack *videoTrack = nil;
+AVURLAsset *asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:originalVideo]];
+NSArray *videoTracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+
+CMFormatDescriptionRef formatDescription = NULL;
+NSArray *formatDescriptions = [videoTrack formatDescriptions];
+if ([formatDescriptions count] &gt; 0)
+formatDescription = (CMFormatDescriptionRef)[formatDescriptions objectAtIndex:0];
+
+if ([videoTracks count] &gt; 0)
+videoTrack = [videoTracks objectAtIndex:0];
+
+CGSize trackDimensions = {
+.width = 0.0,
+.height = 0.0,
+};
+trackDimensions = [videoTrack naturalSize];
+// 获取分辨率
+int width = trackDimensions.width;
+int height = trackDimensions.height;
+NSLog(@&quot;Resolution = %d X %d&quot;,width ,height); 
+float frameRate = [videoTrack nominalFrameRate];//获取帧率
+float bps = [videoTrack estimatedDataRate];//获取比特率
+NSLog(@&quot;Frame rate == %f&quot;,frameRate);
+NSLog(@&quot;bps rate == %f&quot;,bps);
+</code></pre><h5 id="AVFoundation使用流程"><a href="#AVFoundation使用流程" class="headerlink" title="AVFoundation使用流程"></a>AVFoundation使用流程</h5><p>1，创建AVCaptureSession对象，以备其它类的使用。 </p>
+<p>2，使用AVCaptureDevice的静态方法获得需要的使用设备，我们要做的录像功能需要获得摄像头设备。  </p>
+<p>3，利用输入设备AVCaptureDevice初始化AVCaptureDeviceInput对象。  </p>
+<p>4，初始化输入输出数据的管理对象（例如AVCaptureMovieFileOutput），并将其添加到媒体会话管理对象AVCaptureSession中。  </p>
+<p>5，创建预览图层AVCaptureVideoPreviewLayer并指定Session，添加到可显示的容器中。调用AVCaptureSession的startRuning方法开始捕获。</p>
+<p>6，将捕获的音视频输出到文件。 </p>
+<h5 id="准备工作："><a href="#准备工作：" class="headerlink" title="准备工作："></a>准备工作：</h5><p>1，我们需要一个负责录制的类，SHMovieRecorder，它提供一个初始化方法，可设定最长录制时间。提供一个变量，设置宽、高，授权检测的block，初始化预设的prepareCaptureWithBlock:。<br>2，初始化工作，初始化一个AVCaptureSession对象。权限检查，使用枚举CaptureAVSetupResult记录权限状态。在自己创建的dispatch_queue_t sessionQueue线程中，创建AVCaptureDevice的对象，再创建AVCaptureDeviceInput对象。  </p>
+<pre><code>- (void)setup{
+创建AVCaptureSession对象
+self.session = [[AVCaptureSession alloc] init]; 
+//权限检查
+switch ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo]) {
+        case AVAuthorizationStatusNotDetermined: {
+
+            [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+                if (granted) {
+                    self.result = CaptureAVSetupResultSuccess;
+                }
+            }];
+            break;
+        }
+        case AVAuthorizationStatusAuthorized: {
+
+            break;
+        }
+        default:{
+            self.result = CaptureAVSetupResultCameraNotAuthorized;
+        }
+    }
+
+    if ( self.result != CaptureAVSetupResultSuccess) {
+
+        if (self.authorizationResultBlock) {
+            self.authorizationResultBlock(NO);
+        }
+        return;
+    }
+
+    // 初始化AVCaptureDevice及AVCaptureDevice对象
+
+    dispatch_async(self.sessionQueue, ^{
+
+
+        AVCaptureDevice *captureDevice = [[self class] deviceWithMediaType:AVMediaTypeVideo preferringPosition:AVCaptureDevicePositionBack];
+
+        _captureDevice = captureDevice;
+
+        NSError *error = nil;
+        _videoDeviceInput = [[AVCaptureDeviceInput alloc] initWithDevice:captureDevice error:&amp;error];
+
+        if (!_videoDeviceInput) {
+            NSLog(@&quot;未找到设备&quot;);
+        }
+
+        //配置会话
+        [self.session beginConfiguration];
+        // NSProcessInfo用于获取当前正在执行的进程信息，包括设备的名称，操作系统版本，进程标识符，进程环境，参数等信息,这里是为了区分是否是4的单核机型。
+        // if ( [NSProcessInfo processInfo].processorCount == 1 )
+        // 录制帧数设置
+         if ([self.session canSetSessionPreset:AVCaptureSessionPreset640x480]) {
+                [self.session setSessionPreset:AVCaptureSessionPreset640x480];
+            }
+            // 视频的帧率小于24时，会觉得跳帧
+            frameRate = 30;
+
+         // 每帧的时间,每秒30帧，每到这个时间让captureDevice获取一次画面
+        CMTime frameDuration = CMTimeMake( 1, frameRate );
+
+        // 改变相机的参数，这里，相机设备在改变某些参数前必须先锁定，知道改变结束才能解锁。
+        if ( [_captureDevice lockForConfiguration:&amp;error] ) {
+            _captureDevice.activeVideoMaxFrameDuration = frameDuration;
+            _captureDevice.activeVideoMinFrameDuration = frameDuration;
+            [_captureDevice unlockForConfiguration];
+        }
+        else {
+            NSLog( @&quot;videoDevice lockForConfiguration returned error %@&quot;, error );
+        }
+
+        // 分别设置video和audio的input的output
+        AVCaptureAudioDataOutput *audioOut = [[AVCaptureAudioDataOutput alloc] init];
+
+        if ( [self.session canAddOutput:audioOut] ) {
+            [self.session addOutput:audioOut];
+        }
+        _audioConnection = [audioOut connectionWithMediaType:AVMediaTypeAudio];
+        [self.session commitConfiguration];
+
+        // 设置通知
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(sessionWasInterrupted:) name:AVCaptureSessionWasInterruptedNotification object:self.session]; 
+</code></pre><p>3，预览摄像机，我们可以先用PreviewLayer来显示一下camera buffer中的内容，这也将是相机的“取景器”，这里我们使用AVCaptureVideoPreviewLayer，可以用来快速呈现摄像头收集到的原始数据。我们可以设置它的背景色，videoGravity，还可以将它从父layer中取出来，放到我们自己创建的视图preview上。 当点击拍摄按钮时，我们打开摄像功能。 </p>
+<pre><code>// 初始化相机
+[_recorder prepareCaptureWithBlock:^{
+
+    // 预览图层
+    AVCaptureVideoPreviewLayer * preview = [_recorder getPreviewLayer];
+    preview.backgroundColor = [UIColor blackColor].CGColor;
+    preview.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    [preview removeFromSuperlayer];
+    preview.frame = CGRectInset(self.preview.bounds, 0, CGRectGetHeight(self.preview.bounds)-(kScreenWidth/4*3)/2);
+    preview.frame = CGRectMake(0,0, kScreenWidth, kScreenWidth*4/3);
+    [self.preview.layer addSublayer:preview];
+
+}];
+</code></pre><p>点击录像后  </p>
+<pre><code>if (![_session isRunning]) {
+[_session startRunning];
+}
+NSLog(@&quot;开始录像&quot;);
+</code></pre><p>4，获取拍摄内容，监听AVCaptureVideoDataOutputSampleBufferDelegate</p>
+<p>5，监听摄像状态，我们用一个ENUM表示，当我们检测到的状态是SHStateBegin，我们要在它的block中处理初始化摄像机，和初始化时间条的动画。而检测到WKStateCancle时，我们停止录制和动画。<br>6，录制完成，我们需要定义一个录制完成的blcok，由我们的SHMovieRecorder提供，定义代表拍摄完成状态的ENUM，在BLOCK中返回拍摄完成状态和录制的视频内容，拿到内容进行播放等处理。<br>7,视频文件写入，创建一个专门用于文件写入的类：WKMovieWriter，需要一个_recordingURL变量和_cropSize剪裁大小变量。需要配置的有，初始化文件存放地址path，名称根本videoWriter.outputURL获得，初始化self.videoWriter，添加图像输入，初始化刻录，初始化方法添加url和文件格式，这里使用AVFileTypeMPEG4。 最后设置视频的大小，AVVideoHeightKey和AVVideoWidthKey，AVVideoScalingModeKey（填充方式）。    </p>
+<pre><code>//初始化
+NSString *betaCompressionDirectory = [[_recordingURL absoluteString] stringByReplacingOccurrencesOfString:@&quot;file://&quot; withString:@&quot;&quot;];
+
+NSError *error = nil;
+
+unlink([betaCompressionDirectory UTF8String]);
+//添加图像输入
+//--------------------------------------------初始化刻录机--------------------------------------------
+self.videoWriter = [[AVAssetWriter alloc] initWithURL:[NSURL fileURLWithPath:betaCompressionDirectory]
+                                             fileType:AVFileTypeMPEG4
+                                                error:&amp;error];
+</code></pre><p> 接下来初始化图像信息输入参数，参数字典videoSettings中需要存放。IOS端的视频压缩用的是AVAssetWriter硬编码。AVVideoCodecKey:AVVideoCodecH264，解码速度回比较快。AVVideoCodecJPEG输出jpg格式的文件，AVVideoCodecAppleProRes4444输出mov的高清视频。用字典初始化AVAssetWriterInput。<br>硬编码：使用非CPU进行编码，如显卡GPU、ASIC芯片等。硬编码性能高，很多产品在GPU硬件平台抑制了优秀的软编码算法，质量等同于软编码。软编码使用CPU编码，显现简单，直接，但容易使CPU负载过重。 </p>
+<pre><code>videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
+                 AVVideoCodecH264, AVVideoCodecKey,
+                 [NSNumber numberWithInt:_cropSize.width], AVVideoWidthKey,
+                 [NSNumber numberWithInt:_cropSize.height], AVVideoHeightKey,
+                 AVVideoScalingModeResizeAspectFill,AVVideoScalingModeKey,
+                 nil];
+</code></pre><p>接下来设置缓冲区参数设置  </p>
+<pre><code>//--------------------------------------------缓冲区参数设置--------------------------------------------
+NSDictionary *sourcePixelBufferAttributesDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+                                                                                                                 [NSNumber numberWithInt:kCVPixelFormatType_32ARGB], kCVPixelBufferPixelFormatTypeKey, nil];
+
+self.adaptor = [AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:self.videoInput
+
+                                                                                sourcePixelBufferAttributes:sourcePixelBufferAttributesDictionary];
+</code></pre><p>音频的输入设置====== </p>
+<p>设置AVFormatIDKey录音格式为aac格式，AAC代表Advanced Audio Coding(高级音频编码)，是一种由MPEG-4标准定义的有损音频压缩格式。<br>设置音频的通道数AVNumberOfChannelsKey，1为单声道，2为立体声。<br>AVSampleRateKey采样频率为64000，它影响音频的质量。<br>设置AVEncoderBitRateKey比特率，音频的编码比特率，也就是取样率，单位为kbps即千位每秒，每秒取样率越高，越清晰，文件也越大。 一般为128000bps。</p>
+<p>比特率值与现实音频对照 </p>
+<p>16Kbps=电话音质 </p>
+<p>24Kbps=增加电话音质、短波广播、长波广播、欧洲制式中波广播</p>
+<p>40Kbps=美国制式中波广播 </p>
+<p>56Kbps=话音</p>
+<p>64Kbps=增加话音（手机铃声最佳比特率设定值、手机单声道MP3播放器最佳设定值） </p>
+<p>112Kbps=FM调频立体声广播 </p>
+<p>128Kbps=磁带（手机立体声MP3播放器最佳设定值、低档MP3播放器最佳设定值） </p>
+<p>160Kbps=HIFI高保真（中高档MP3播放器最佳设定值） </p>
+<p>192Kbps=CD（高档MP3播放器最佳设定值） </p>
+<p>256Kbps=Studio音乐工作室（音乐发烧友适用） </p>
+<pre><code>//音频配置 
+NSDictionary* audioOutputSettings = nil;
+audioOutputSettings = [ NSDictionary dictionaryWithObjectsAndKeys:
+
+                       [ NSNumber numberWithInt: kAudioFormatMPEG4AAC ], AVFormatIDKey,
+
+                       [ NSNumber numberWithInt:64000], AVEncoderBitRateKey,
+
+                       [ NSNumber numberWithFloat: 44100.0 ], AVSampleRateKey,
+
+                       [ NSNumber numberWithInt: 1 ], AVNumberOfChannelsKey,
+
+                       [ NSData dataWithBytes: &amp;acl length: sizeof( acl ) ], AVChannelLayoutKey,
+
+                       nil ];
+
+self.audioInput = [AVAssetWriterInput  assetWriterInputWithMediaType: AVMediaTypeAudio
+                                                      outputSettings: audioOutputSettings];
+self.audioInput.expectsMediaDataInRealTime = YES;
+
+
+//图像和语音输入添加到刻录机
+[self.videoWriter addInput:self.audioInput];
+
+[self.videoWriter addInput:self.videoInput];
+</code></pre><p>6，文件写入</p>
+<h2 id="未完待续"><a href="#未完待续" class="headerlink" title="未完待续"></a>未完待续</h2>
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/16/使用FMDB及CoreData实现多表查询/" rel="next" title="使用FMDB及CoreData实现多表查询">
+                <i class="fa fa-chevron-left"></i> 使用FMDB及CoreData实现多表查询
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/10/30/shell打包脚本解读/" rel="prev" title="shell自动打包脚本解读">
+                shell自动打包脚本解读 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="John Doe">
+          <p class="site-author-name" itemprop="name">John Doe</p>
+          <p class="site-description motion-element" itemprop="description"></p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/archives">
+              <span class="site-state-item-count">15</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">categories</span>
+              
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#微信小视频录制"><span class="nav-number">1.</span> <span class="nav-text">微信小视频录制</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#功能介绍"><span class="nav-number">1.1.</span> <span class="nav-text">功能介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#AVFoundation的简介"><span class="nav-number">1.2.</span> <span class="nav-text">AVFoundation的简介</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#AVFoundation使用流程"><span class="nav-number">1.3.</span> <span class="nav-text">AVFoundation使用流程</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#准备工作："><span class="nav-number">1.4.</span> <span class="nav-text">准备工作：</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#未完待续"><span class="nav-number"></span> <span class="nav-text">未完待续</span></a></li></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">John Doe</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Muse
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
