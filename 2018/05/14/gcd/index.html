@@ -1,0 +1,778 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+  <link href="/vendors/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+  <link href="//fonts.googleapis.com/css?family=Lato:300,400,700,400italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+
+
+
+<link href="/vendors/font-awesome/css/font-awesome.min.css?v=4.4.0" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=0.5.0" rel="stylesheet" type="text/css">
+
+
+  <meta name="keywords" content="Hexo, NexT">
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=0.5.0">
+
+
+
+
+
+
+<meta name="description" content="多线程之GCD(上篇)什么是GCDGCD（Grand Central Dispatch）是异步任务的技术之一。在没有GCD之前，我们可以使用Cocoa框架中NSObject类的方法去处理线程问题，用performSelectorInBackground:withObject实例方法用来执行后台线程，用performSelectInSelectorOnMainThread实例方法来使用主线程。虽然p">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多线程之GCD(上篇)">
+<meta property="og:url" content="http://yoursite.com/2018/05/14/gcd/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="多线程之GCD(上篇)什么是GCDGCD（Grand Central Dispatch）是异步任务的技术之一。在没有GCD之前，我们可以使用Cocoa框架中NSObject类的方法去处理线程问题，用performSelectorInBackground:withObject实例方法用来执行后台线程，用performSelectInSelectorOnMainThread实例方法来使用主线程。虽然p">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-01-17T02:11:01.182Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="多线程之GCD(上篇)">
+<meta name="twitter:description" content="多线程之GCD(上篇)什么是GCDGCD（Grand Central Dispatch）是异步任务的技术之一。在没有GCD之前，我们可以使用Cocoa框架中NSObject类的方法去处理线程问题，用performSelectorInBackground:withObject实例方法用来执行后台线程，用performSelectInSelectorOnMainThread实例方法来使用主线程。虽然p">
+
+
+
+<script type="text/javascript" id="hexo.configuration">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post"},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: 0,
+      author: 'Author'
+    }
+  };
+</script>
+
+  <title> 多线程之GCD(上篇) | Hexo </title>
+</head>
+
+<body itemscope="" itemtype="http://schema.org/WebPage" lang="">
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container one-collumn sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope="" itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-meta ">
+  
+
+  <div class="custom-logo-site-title">
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <span class="site-title">Hexo</span>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+  <p class="site-subtitle"></p>
+</div>
+
+<div class="site-nav-toggle">
+  <button>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+    <span class="btn-bar"></span>
+  </button>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-home fa-fw"></i> <br>
+            
+            Home
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-th fa-fw"></i> <br>
+            
+            Categories
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/所有文章" rel="section">
+            
+              <i class="menu-item-icon fa fa-archive fa-fw"></i> <br>
+            
+            Archives
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-tags fa-fw"></i> <br>
+            
+            Tags
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope="" itemtype="http://schema.org/Article">
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                多线程之GCD(上篇)
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            <span class="post-meta-item-icon">
+              <i class="fa fa-calendar-o"></i>
+            </span>
+            <span class="post-meta-item-text">Posted on</span>
+            <time itemprop="dateCreated" datetime="2018-05-14T23:12:25+08:00" content="2018-05-14">
+              2018-05-14
+            </time>
+          </span>
+
+          
+            <span class="post-category">
+              &nbsp; | &nbsp;
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+              
+                <span itemprop="about" itemscope="" itemtype="https://schema.org/Thing">
+                  <a href="/categories/技术文章/" itemprop="url" rel="index">
+                    <span itemprop="name">技术文章</span>
+                  </a>
+                </span>
+
+                
+                
+
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+
+          
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="多线程之GCD-上篇"><a href="#多线程之GCD-上篇" class="headerlink" title="多线程之GCD(上篇)"></a>多线程之GCD(上篇)</h1><h2 id="什么是GCD"><a href="#什么是GCD" class="headerlink" title="什么是GCD"></a>什么是GCD</h2><p><strong>GCD</strong>（Grand Central Dispatch）是异步任务的技术之一。<br>在没有GCD之前，我们可以使用Cocoa框架中NSObject类的方法去处理线程问题，用<code>performSelectorInBackground:withObject</code>实例方法用来执行后台线程，用<code>performSelectInSelectorOnMainThread</code>实例方法来使用主线程。虽然performSelector系方法比使用NSTread类进行多线程要简单，但与GCD相比，它不够简洁。</p>
+<pre><code>- (void)viewDidLoad {
+[super viewDidLoad];
+// 后台线程执行
+[self performSelector:@selector(clickSelector:) withObject:nil];
+// 主线程执行
+[self performSelectorOnMainThread:@selector(clickSelector:) withObject:nil waitUntilDone:NO];
+}
+</code></pre><h2 id="为什么要使用GCD："><a href="#为什么要使用GCD：" class="headerlink" title="为什么要使用GCD："></a>为什么要使用GCD：</h2><p>应用程序启动时，通过主线程来描绘用户界面、处理触摸屏幕的事件，如果在该线程中处理耗时的操作，比如图像处理和数据库访问，就会妨碍主线程的执行(这个主线程也就是Runloop)，从而导致不能更新界面、程序画面长时间停滞等问题，为了解决这个问题，就需要将这些耗时的操作放到其它线程中执行。<br>我们现在一个物理的CPU芯片实际上有64个（64核）CPU，而一个CPU核执行的命令为一条无分叉路径，也就是一个线程。GCD就是是苹果为多核的并行运算提出的解决方案，它会自动合理地利用更多的CPU内核（比如双核、四核），最重要的是它会自动管理线程的生命周期（创建线程、调度任务、销毁线程），完全不需要我们管理。</p>
+<h2 id="GCD的使用"><a href="#GCD的使用" class="headerlink" title="GCD的使用"></a>GCD的使用</h2><pre><code>dispatch_async(myConcurrentDispatchQueue, ^{
+    NSLog(@&quot;my block&quot;);//耗时的操作
+});
+</code></pre><p>在block中定义要执行的任务，通过dispatch_async追加在变量queue中，这里的queue（Dispath Queue）就是执行处理的等待队列，它分为下面两种：<br><strong>串行:</strong>  <code>Serial Dispatch Queue</code>,等待现在的执行中处理结束。<br><strong>并行：</strong> <code>Concurrent Dispatch Queue</code> ，不等待现在执行中处理结束。</p>
+<h3 id="创建Serial-Dispatch-Queue的方法："><a href="#创建Serial-Dispatch-Queue的方法：" class="headerlink" title="创建Serial Dispatch Queue的方法："></a>创建Serial Dispatch Queue的方法：</h3><pre><code>dispatch_queue_t mySerialDispatchQueue =     dispatch_queue_create(&quot;com.gcd.mySerialDispatchQueue&quot;, NULL);
+</code></pre><p>Serial Dispatch Queue中每次只能追加一个处理，它可以用来解决数据竞争的问题。但如果生成多个Serial Dispatch Queue，它们将并行执行，当然也会消耗大量内存，引起大量的上下文切换，应该生成仅限所必须的个数。当想并行执行不发生数据竞争等问题的处理时，使用Concurrent Dispatch Queue，无论生成多少个，XUN内核会有效管理线程。</p>
+<h3 id="创建Concurrent-Dispatch-Queue的方法："><a href="#创建Concurrent-Dispatch-Queue的方法：" class="headerlink" title="创建Concurrent Dispatch Queue的方法："></a>创建Concurrent Dispatch Queue的方法：</h3><pre><code>dispatch_queue_t myConcurrentDispatchQueue = dispatch_queue_create(&quot;com.gcd.myConcurrentDiapatchQueue&quot;, DISPATCH_QUEUE_CONCURRENT);
+ dispatch_async(myConcurrentDispatchQueue, ^{
+     NSLog(@&quot;my block&quot;);//耗时的操作
+ });
+</code></pre><p>对于dispatch_asyn的内存管理，需要注意，在dispatch_asyn函数中追加Block到Dispatch Queue后，即使立即释放Dispatch Queue，由于它被Block所持有也不会被马上废弃，因而block能够执行，block执行结束后会释放Dispatch Queue,当不被持有也就被废弃了。</p>
+<h3 id="Main-Dispatch-Queue-和-Globle-Dispatch-Queue"><a href="#Main-Dispatch-Queue-和-Globle-Dispatch-Queue" class="headerlink" title="Main Dispatch Queue 和 Globle Dispatch Queue"></a>Main Dispatch Queue 和 Globle Dispatch Queue</h3><p>即便我们不自己生成dispatch Queue，系统也会提供给我们几个，那就是<code>Main Dispatch Queue</code>和<code>Globle Dispatch Queue</code>。顾名思义，Main Dispatch Queue也是在主线程中执行的Dispatch Queue，因为主线程<br>只有一个，它必然也就是Serial Dispatch Queue，追加到Main Dispatch Queue的处理在主线程的Runloop中执行。另一个Globle Dispatch Queue是所有应用程序都能够使用的Concurrent Dispatch Queue，它有四个执行优先级，分别是：<code>Hight Priority</code>、<code>Default Priority</code>、<code>Low Priority</code>和<code>Background Priority</code>,在向Globle Dispatch Queue追加处理时，应选择与处理内容对应的执行优先级的Globle Dispatch Queue。</p>
+<h3 id="各种Dispatch-Queue的获取方法："><a href="#各种Dispatch-Queue的获取方法：" class="headerlink" title="各种Dispatch Queue的获取方法："></a>各种Dispatch Queue的获取方法：</h3><pre><code>// Main Dispatch Queue 的获取方法
+dispatch_queue_t mainDispatchQueue = dispatch_get_main_queue();
+
+// Globle Dispatch Queue （高优先级）的获取方法
+dispatch_queue_t globleDispatchQueueHigh = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+
+// Globle Dispatch Queue （默认优先级）的获取方法
+dispatch_queue_t globleDispatchQueueDefault = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+
+// Globle Dispatch Queue （低优先级）的获取方法
+dispatch_queue_t globleDispatchQueueLow = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0);
+
+// Globle Dispatch Queue （默认优先级）的获取方法
+dispatch_queue_t globleDispatchQueueBackground =     dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0);
+</code></pre><h3 id="变更执行优先级：dispatch-set-target-queue"><a href="#变更执行优先级：dispatch-set-target-queue" class="headerlink" title="变更执行优先级：dispatch_set_target_queue"></a>变更执行优先级：dispatch_set_target_queue</h3><pre><code>// 如果将多个串行的queue指定到了同一目标，那么着多个串行queue在目标queue上就是同步执行的，不再是并行执行。
+dispatch_queue_t targetQueue = dispatch_queue_create(&quot;test.target.queue&quot;, DISPATCH_QUEUE_SERIAL);  
+dispatch_queue_t queue1 = dispatch_queue_create(&quot;test.1&quot;, DISPATCH_QUEUE_SERIAL);
+dispatch_queue_t queue2 = dispatch_queue_create(&quot;test.2&quot;, DISPATCH_QUEUE_SERIAL);
+dispatch_queue_t queue3 = dispatch_queue_create(&quot;test.3&quot;, DISPATCH_QUEUE_SERIAL);
+
+dispatch_set_target_queue(queue1, targetQueue);
+dispatch_set_target_queue(queue2, targetQueue);
+dispatch_set_target_queue(queue3, targetQueue);
+</code></pre><h3 id="延迟后执行：dispatch-after"><a href="#延迟后执行：dispatch-after" class="headerlink" title="延迟后执行：dispatch_after"></a>延迟后执行：dispatch_after</h3><pre><code>// 3秒钟后执行操作
+dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 3ull * NSEC_PER_SEC);
+dispatch_after(time, dispatch_get_main_queue(), ^{
+
+});
+</code></pre><p>第一个参数为指定的开始时间，第二个参数是指定的时间单位后。NSEC_PER_SEC是以秒为单位，NSEC_PER_MSEC是以微秒为单位。<br>dispatch_after并不是在指定时间后执行处理，而只在指定时间追加处理到Dispatch Queue,因为Main Dispatch Queue在Runloop中执行，所以当它有大量的处理追加的时候，会有延迟的时间，如果不是对时间特别的精准，大致的延迟效果是很不错的。</p>
+<h3 id="Dispatch-Group"><a href="#Dispatch-Group" class="headerlink" title="Dispatch Group"></a>Dispatch Group</h3><p>经常有一种情况，我们需要在追加到Dispatch Queue中的多个处理全部结束后进行处理，可以使用Dispatch Group。</p>
+<pre><code>dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+dispatch_group_t group = dispatch_group_create();
+dispatch_group_async(group, queue, ^{
+    NSLog(@&quot;block1&quot;);
+});
+dispatch_group_async(group, queue, ^{
+    NSLog(@&quot;block2&quot;);
+});
+dispatch_group_async(group, queue, ^{
+    NSLog(@&quot;block3&quot;);
+});
+dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+    NSLog(@&quot;执行完成&quot;);
+
+});
+</code></pre><p>最后的执行结果：</p>
+<pre><code>block1
+block2
+block3
+执行完成
+</code></pre><p>因为多个线程并行执行，所以追加的顺序不定。</p>
+<h3 id="Dispatch-barrier-async"><a href="#Dispatch-barrier-async" class="headerlink" title="Dispatch_barrier_async"></a>Dispatch_barrier_async</h3><pre><code>dispatch_queue_t queueBarrer = dispatch_queue_create(&quot;com.concurrentDiaptchQueue.forBarrier&quot;, DISPATCH_QUEUE_CONCURRENT);
+dispatch_async(queueBarrer, blcok1);
+dispatch_async(queueBarrer, blcok2);
+dispatch_async(queueBarrer, blcok3);
+//dispatch_barrier_sync会将上面追加的并行操作全部处理结束之后，再将dispatch_barrier_sync的处理追加上，然后由dispatch_barrier_sync函数追加的处理全部执行完毕后，才恢复下面的动作。
+dispatch_barrier_sync(queueBarrer, blaock6);
+dispatch_async(queueBarrer, blcok4);
+dispatch_async(queueBarrer, blcok5);        
+</code></pre><p>当访问数据库文件时，用Serial Dispatch Queue可以避免数据竞争的问题，因为读取操作与写入操作不能惊醒并行处理。但是为了高效，我们可以只并行的进行写入处理，并行的进行读取处理，那么多个并行执行就不会发生问题。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/10/30/shell打包脚本解读/" rel="next" title="shell自动打包脚本解读">
+                <i class="fa fa-chevron-left"></i> shell自动打包脚本解读
+              </a>
+            
+          </div>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/06/17/多线程之GCD(下篇/" rel="prev" title="符号化IOS崩溃日志，解读堆栈信息">
+                符号化IOS崩溃日志，解读堆栈信息 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            Overview
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel ">
+        <div class="site-author motion-element" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image" src="/images/default_avatar.jpg" alt="Jing">
+          <p class="site-author-name" itemprop="name">Jing</p>
+          <p class="site-description motion-element" itemprop="description">爱技术，爱设计</p>
+        </div>
+        <nav class="site-state motion-element">
+          <div class="site-state-item site-state-posts">
+            <a href="/所有文章">
+              <span class="site-state-item-count">16</span>
+              <span class="site-state-item-name">posts</span>
+            </a>
+          </div>
+
+          
+            <div class="site-state-item site-state-categories">
+              <a href="/categories">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">categories</span>
+              </a>
+            </div>
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        <div class="links-of-blogroll motion-element">
+          
+        </div>
+
+      </section>
+
+      
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc-indicator-top post-toc-indicator">
+            <i class="fa fa-angle-double-up"></i>
+          </div>
+          <div class="post-toc">
+            
+              
+            
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#多线程之GCD-上篇"><span class="nav-number">1.</span> <span class="nav-text">多线程之GCD(上篇)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#什么是GCD"><span class="nav-number">1.1.</span> <span class="nav-text">什么是GCD</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么要使用GCD："><span class="nav-number">1.2.</span> <span class="nav-text">为什么要使用GCD：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#GCD的使用"><span class="nav-number">1.3.</span> <span class="nav-text">GCD的使用</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Serial-Dispatch-Queue的方法："><span class="nav-number">1.3.1.</span> <span class="nav-text">创建Serial Dispatch Queue的方法：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建Concurrent-Dispatch-Queue的方法："><span class="nav-number">1.3.2.</span> <span class="nav-text">创建Concurrent Dispatch Queue的方法：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Main-Dispatch-Queue-和-Globle-Dispatch-Queue"><span class="nav-number">1.3.3.</span> <span class="nav-text">Main Dispatch Queue 和 Globle Dispatch Queue</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#各种Dispatch-Queue的获取方法："><span class="nav-number">1.3.4.</span> <span class="nav-text">各种Dispatch Queue的获取方法：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变更执行优先级：dispatch-set-target-queue"><span class="nav-number">1.3.5.</span> <span class="nav-text">变更执行优先级：dispatch_set_target_queue</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#延迟后执行：dispatch-after"><span class="nav-number">1.3.6.</span> <span class="nav-text">延迟后执行：dispatch_after</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dispatch-Group"><span class="nav-number">1.3.7.</span> <span class="nav-text">Dispatch Group</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dispatch-barrier-async"><span class="nav-number">1.3.8.</span> <span class="nav-text">Dispatch_barrier_async</span></a></li></ol></li></ol></li></ol></div>
+            
+          </div>
+          <div class="post-toc-indicator-bottom post-toc-indicator">
+            <i class="fa fa-angle-double-down"></i>
+          </div>
+        </section>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jing</span>
+</div>
+
+<div class="powered-by">
+  Powered by <a class="theme-link" href="http://hexo.io">Hexo</a>
+</div>
+
+<div class="theme-info">
+  Theme -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+
+      </div>
+    </footer>
+
+    <div class="back-to-top">
+      <i class="fa fa-arrow-up"></i>
+    </div>
+  </div>
+
+  
+
+
+  
+
+
+
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+  <script type="text/javascript" src="/vendors/jquery/index.js?v=2.1.3"></script>
+
+  <script type="text/javascript" src="/vendors/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  <script type="text/javascript" src="/vendors/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/velocity/velocity.ui.min.js"></script>
+
+  <script type="text/javascript" src="/vendors/fancybox/source/jquery.fancybox.pack.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=0.5.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=0.5.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=0.5.0"></script>
+
+
+
+  
+  
+<script type="text/javascript" src="/js/src/scrollspy.js?v=0.5.0"></script>
+
+<script type="text/javascript" id="sidebar.toc.highlight">
+  $(document).ready(function () {
+    var tocSelector = '.post-toc';
+    var $tocSelector = $(tocSelector);
+    var activeCurrentSelector = '.active-current';
+
+    $tocSelector
+      .on('activate.bs.scrollspy', function () {
+        var $currentActiveElement = $(tocSelector + ' .active').last();
+
+        removeCurrentActiveClass();
+        $currentActiveElement.addClass('active-current');
+
+        $tocSelector[0].scrollTop = $currentActiveElement.position().top;
+      })
+      .on('clear.bs.scrollspy', function () {
+        removeCurrentActiveClass();
+      });
+
+    function removeCurrentActiveClass () {
+      $(tocSelector + ' ' + activeCurrentSelector)
+        .removeClass(activeCurrentSelector.substring(1));
+    }
+
+    function processTOC () {
+      getTOCMaxHeight();
+      toggleTOCOverflowIndicators();
+    }
+
+    function getTOCMaxHeight () {
+      var height = $('.sidebar').height() -
+                   $tocSelector.position().top -
+                   $('.post-toc-indicator-bottom').height();
+
+      $tocSelector.css('height', height);
+
+      return height;
+    }
+
+    function toggleTOCOverflowIndicators () {
+      tocOverflowIndicator(
+        '.post-toc-indicator-top',
+        $tocSelector.scrollTop() > 0 ? 'show' : 'hide'
+      );
+
+      tocOverflowIndicator(
+        '.post-toc-indicator-bottom',
+        $tocSelector.scrollTop() >= $tocSelector.find('ol').height() - $tocSelector.height() ? 'hide' : 'show'
+      )
+    }
+
+    $(document).on('sidebar.motion.complete', function () {
+      processTOC();
+    });
+
+    $('body').scrollspy({ target: tocSelector });
+    $(window).on('resize', function () {
+      if ( $('.sidebar').hasClass('sidebar-active') ) {
+        processTOC();
+      }
+    });
+
+    onScroll($tocSelector);
+
+    function onScroll (element) {
+      element.on('mousewheel DOMMouseScroll', function (event) {
+          var oe = event.originalEvent;
+          var delta = oe.wheelDelta || -oe.detail;
+
+          this.scrollTop += ( delta < 0 ? 1 : -1 ) * 30;
+          event.preventDefault();
+
+          toggleTOCOverflowIndicators();
+      });
+    }
+
+    function tocOverflowIndicator (indicator, action) {
+      var $indicator = $(indicator);
+      var opacity = action === 'show' ? 1 : 0;
+      $indicator.velocity ?
+        $indicator.velocity('stop').velocity({
+          opacity: opacity
+        }, { duration: 100 }) :
+        $indicator.stop().animate({
+          opacity: opacity
+        }, 100);
+    }
+
+  });
+</script>
+
+<script type="text/javascript" id="sidebar.nav">
+  $(document).ready(function () {
+    var html = $('html');
+    var TAB_ANIMATE_DURATION = 200;
+    var hasVelocity = $.isFunction(html.velocity);
+
+    $('.sidebar-nav li').on('click', function () {
+      var item = $(this);
+      var activeTabClassName = 'sidebar-nav-active';
+      var activePanelClassName = 'sidebar-panel-active';
+      if (item.hasClass(activeTabClassName)) {
+        return;
+      }
+
+      var currentTarget = $('.' + activePanelClassName);
+      var target = $('.' + item.data('target'));
+
+      hasVelocity ?
+        currentTarget.velocity('transition.slideUpOut', TAB_ANIMATE_DURATION, function () {
+          target
+            .velocity('stop')
+            .velocity('transition.slideDownIn', TAB_ANIMATE_DURATION)
+            .addClass(activePanelClassName);
+        }) :
+        currentTarget.animate({ opacity: 0 }, TAB_ANIMATE_DURATION, function () {
+          currentTarget.hide();
+          target
+            .stop()
+            .css({'opacity': 0, 'display': 'block'})
+            .animate({ opacity: 1 }, TAB_ANIMATE_DURATION, function () {
+              currentTarget.removeClass(activePanelClassName);
+              target.addClass(activePanelClassName);
+            });
+        });
+
+      item.siblings().removeClass(activeTabClassName);
+      item.addClass(activeTabClassName);
+    });
+
+    $('.post-toc a').on('click', function (e) {
+      e.preventDefault();
+      var targetSelector = NexT.utils.escapeSelector(this.getAttribute('href'));
+      var offset = $(targetSelector).offset().top;
+      hasVelocity ?
+        html.velocity('stop').velocity('scroll', {
+          offset: offset  + 'px',
+          mobileHA: false
+        }) :
+        $('html, body').stop().animate({
+          scrollTop: offset
+        }, 500);
+    });
+
+    // Expand sidebar on post detail page by default, when post has a toc.
+    NexT.motion.middleWares.sidebar = function () {
+      var $tocContent = $('.post-toc-content');
+
+      if (CONFIG.sidebar.display === 'post' || CONFIG.sidebar.display === 'always') {
+        if ($tocContent.length > 0 && $tocContent.html().trim().length > 0) {
+          NexT.utils.displaySidebar();
+        }
+      }
+    };
+  });
+</script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=0.5.0"></script>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+  
+  
+
+  
+
+  
+
+</body>
+</html>
